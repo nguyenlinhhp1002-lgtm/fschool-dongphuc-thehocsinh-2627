@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main admin-main--narrow">
+    <h1>Đợt đăng ký</h1>
+    <p class="admin-main__desc">Nhãn đợt được gán khi tải file đăng ký lên, dùng để lọc/nhóm số liệu báo cáo.</p>
+
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Tên đợt</th><th>Ngày bắt đầu</th><th>Ngày kết thúc</th><% if (session.role === 'admin') { %><th></th><% } %></tr></thead>
+        <tbody>
+          <% batches.forEach(b => { %>
+            <tr>
+              <% if (session.role === 'admin') { %>
+              <form method="post" action="/admin/dot-dang-ky/<%= b.id %>" style="display:contents">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <td><input type="text" name="tenDot" value="<%= b.ten_dot %>" style="width:100%" /></td>
+                <td><input type="date" name="ngayBatDau" value="<%= b.ngay_bat_dau || '' %>" /></td>
+                <td><input type="date" name="ngayKetThuc" value="<%= b.ngay_ket_thuc || '' %>" /></td>
+                <td><button class="btn btn-outline btn-sm" type="submit">Lưu</button></td>
+              </form>
+              <% } else { %>
+                <td><%= b.ten_dot %></td><td><%= b.ngay_bat_dau || '' %></td><td><%= b.ngay_ket_thuc || '' %></td>
+              <% } %>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if (session.role === 'admin') { %>
+    <div class="card" style="margin-top:18px">
+      <h2 style="margin-top:0">Thêm đợt mới</h2>
+      <form method="post" action="/admin/dot-dang-ky">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div class="form-row">
+          <div class="form-field"><label>Tên đợt</label><input type="text" name="tenDot" placeholder="vd Đợt 3" required /></div>
+          <div class="form-field"><label>Ngày bắt đầu</label><input type="date" name="ngayBatDau" /></div>
+          <div class="form-field"><label>Ngày kết thúc</label><input type="date" name="ngayKetThuc" /></div>
+          <button class="btn btn-primary" type="submit">Thêm</button>
+        </div>
+      </form>
+    </div>
+    <% } %>
+  </main>
+</body>
+</html>

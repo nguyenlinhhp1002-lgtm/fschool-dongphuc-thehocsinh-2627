@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle: 'Đăng nhập' }) %></head>
+<body class="admin-auth-page">
+  <div class="auth-card">
+    <div class="auth-card__logo">ĐP</div>
+    <h1>Quản lý đồng phục 2026</h1>
+    <p class="auth-card__subtitle">Đăng nhập để tiếp tục</p>
+    <% if (error) { %>
+      <div class="alert alert--error"><%= error %></div>
+    <% } %>
+    <form method="post" action="/admin/login">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label for="username">Tên đăng nhập</label>
+      <input id="username" name="username" type="text" autocomplete="username" required autofocus />
+      <label for="password">Mật khẩu</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required />
+      <button type="submit">Đăng nhập</button>
+    </form>
+  </div>
+</body>
+</html>

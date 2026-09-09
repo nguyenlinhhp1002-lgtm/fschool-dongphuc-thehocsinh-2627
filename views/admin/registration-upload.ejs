@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>Tải lên file đăng ký</h1>
+    <p class="admin-main__desc">File xuất từ hệ thống thu phí, đúng định dạng cột chuẩn: RollNumber, Tên, Email, Món, Size, Số lượng, Đơn giá, Tổng tiền, Trạng thái thanh toán, PaymentDate, Tháng.</p>
+
+    <% if (typeof done !== 'undefined' && done) { %>
+      <div class="alert alert--success">Đã nhập <b><%= moi %></b> dòng đăng ký mới<% if (Number(trung) > 0) { %>, bỏ qua <b><%= trung %></b> dòng trùng (đã nhập trước đó)<% } %>.</div>
+    <% } %>
+
+    <% if (uploadErrors) { %>
+      <div class="alert alert--error">
+        <b>Không nhập được file:</b>
+        <ul><% uploadErrors.forEach(e => { %><li><%= e %></li><% }) %></ul>
+      </div>
+    <% } %>
+
+    <% if (preview) { %>
+      <div class="card">
+        <h2 style="margin-top:0">Kết quả đọc file — <%= preview.filename %></h2>
+        <div class="diff-summary">
+          <div class="item"><b><%= preview.tomTat.tongDong %></b>Tổng số dòng</div>
+          <div class="item"><b style="color:var(--success)"><%= preview.tomTat.soDongTinhVaoSoLieu %></b>Dòng hợp lệ, tính vào số liệu</div>
+          <div class="item"><b style="color:var(--danger)"><%= preview.tomTat.soDongLoiMaHs %></b>Không khớp mã học sinh</div>
+          <div class="item"><b style="color:var(--danger)"><%= preview.tomTat.soDongLoiLoaiTrangPhuc %></b>Không nhận diện được loại trang phục</div>
+          <div class="item"><b style="color:var(--warn)"><%= preview.tomTat.soDongBatThuong %></b>Dòng bất thường, cần kiểm tra</div>
+          <div class="item"><b style="color:var(--text-muted)"><%= preview.tomTat.soDongKhongThanhToan %></b>Chưa/không thanh toán</div>
+        </div>
+
+        <% if (preview.mauLoi.length > 0) { %>
+          <p style="font-size:0.82rem"><b>Một số dòng cần chú ý:</b> (xem đầy đủ &amp; xử lý tại <a href="/admin/dang-ky/loi">Cần xử lý</a> sau khi nhập)</p>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>Dòng</th><th>RollNumber</th><th>Món</th><th>SL</th><th>Đơn giá</th><th>Vấn đề</th></tr></thead>
+              <tbody>
+                <% preview.mauLoi.forEach(r => { %>
+                  <tr>
+                    <td><%= r.rowNumber %></td>
+                    <td><%= r.rollNumber %></td>
+                    <td><%= r.monRaw %></td>
+                    <td class="num"><%= r.soLuong %></td>
+                    <td class="num"><%= r.donGia || '' %></td>
+                    <td>
+                      <% if (r.trangThaiDongBo === 'loi_ma_hs') { %><span class="badge badge--danger">Không khớp mã HS</span><% } %>
+                      <% if (r.trangThaiDongBo === 'loi_loai_trang_phuc') { %><span class="badge badge--danger">Không rõ loại trang phục</span><% } %>
+                      <% if (r.trangThaiDongBo === 'can_kiem_tra_bat_thuong') { %><span class="badge badge--warn">Bất thường</span><% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+
+        <form method="post" action="/admin/dang-ky/upload/confirm" style="margin-top:14px">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <input type="hidden" name="token" value="<%= preview.token %>" />
+          <div class="form-row">
+            <div class="form-field">
+              <label>Tên đợt đăng ký cho toàn bộ lần tải lên này</label>
+              <input type="text" name="tenDot" value="<%= preview.goiYDot %>" required placeholder="vd Đợt 2" />
+            </div>
+            <button class="btn btn-primary" type="submit">Xác nhận nhập dữ liệu</button>
+            <a class="btn btn-outline" href="/admin/dang-ky/upload">Huỷ</a>
+          </div>
+        </form>
+      </div>
+    <% } else if (session.role === 'admin') { %>
+      <div class="card">
+        <form method="post" action="/admin/dang-ky/upload" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <div class="form-row">
+            <div class="form-field">
+              <label>File Excel (.xlsx)</label>
+              <input type="file" name="file" accept=".xlsx" required />
+            </div>
+            <button class="btn btn-primary" type="submit">Tải lên &amp; đọc file</button>
+          </div>
+        </form>
+      </div>
+    <% } %>
+
+    <h2>Lịch sử tải lên</h2>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Thời gian</th><th>Người tải</th><th>File</th><th>Đợt</th><th>Tổng dòng</th><th>Lỗi</th><th>Bất thường</th></tr></thead>
+        <tbody>
+          <% history.forEach(h => { %>
+            <tr>
+              <td><%= h.uploaded_at %></td>
+              <td><%= h.nguoi_upload %></td>
+              <td><%= h.ten_file %></td>
+              <td><%= h.ten_dot || '' %></td>
+              <td class="num"><%= h.tong_dong %></td>
+              <td class="num"><%= h.so_dong_loi %></td>
+              <td class="num"><%= h.so_dong_bat_thuong %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

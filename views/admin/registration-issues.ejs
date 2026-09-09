@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>Đăng ký cần xử lý thủ công</h1>
+    <p class="admin-main__desc">Các dòng đăng ký không khớp mã học sinh, không nhận diện được loại trang phục, hoặc bất thường (số lượng/giá không khớp mẫu — có thể là đơn gộp nhiều món bị ghi sai định dạng). Sửa lại mã HS/loại trang phục nếu xác định được, hoặc để nguyên nếu cần bỏ qua.</p>
+
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr><th>Đợt</th><th>RollNumber</th><th>Tên (file)</th><th>Món</th><th>Size</th><th>SL</th><th>Đơn giá</th><th>Ngày TT</th><th>Vấn đề</th><th>Sửa</th></tr>
+        </thead>
+        <tbody>
+          <% issues.rows.forEach(r => { %>
+            <tr>
+              <td><%= r.ten_dot || '' %></td>
+              <td><%= r.ma_hs || '' %></td>
+              <td><%= r.ten_raw || '' %></td>
+              <td><%= r.mon_raw %></td>
+              <td><%= r.size_raw || '' %></td>
+              <td class="num"><%= r.so_luong %></td>
+              <td class="num"><%= r.don_gia || '' %></td>
+              <td><%= r.ngay_thanh_toan || '' %></td>
+              <td>
+                <% if (r.trang_thai_dong_bo === 'loi_ma_hs') { %><span class="badge badge--danger">Không khớp mã HS</span><% } %>
+                <% if (r.trang_thai_dong_bo === 'loi_loai_trang_phuc') { %><span class="badge badge--danger">Không rõ loại</span><% } %>
+                <% if (r.trang_thai_dong_bo === 'can_kiem_tra_bat_thuong') { %><span class="badge badge--warn">Bất thường</span><% } %>
+              </td>
+              <td>
+                <% if (session.role === 'admin') { %>
+                <form method="post" action="/admin/dang-ky/loi/<%= r.id %>/sua" class="pill-form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="text" name="maHs" placeholder="Mã HS đúng" value="<%= r.trang_thai_dong_bo === 'loi_ma_hs' ? '' : r.ma_hs %>" />
+                  <select name="codePrefix">
+                    <option value="">— Loại —</option>
+                    <% categories.forEach(c => { %><option value="<%= c.code_prefix %>" <%= r.code_prefix === c.code_prefix ? 'selected' : '' %>><%= c.ten_hien_thi %></option><% }) %>
+                  </select>
+                  <button class="btn btn-outline btn-sm" type="submit">Lưu</button>
+                </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (issues.rows.length === 0) { %>
+            <tr><td colspan="10" style="text-align:center;color:var(--text-muted)">Không có dòng nào cần xử lý 🎉</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px">Tổng <%= issues.total %> dòng cần xử lý.</p>
+  </main>
+</body>
+</html>

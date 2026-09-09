@@ -1,0 +1,30 @@
+{
+  "name": "dong-phuc-2026",
+  "version": "1.0.0",
+  "description": "Quan ly & bao cao phat - tra dong phuc hoc sinh",
+  "private": true,
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "admin": "node scripts/admin-users.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17.4",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "express-session": "^1.18.0",
+    "helmet": "^7.1.0",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

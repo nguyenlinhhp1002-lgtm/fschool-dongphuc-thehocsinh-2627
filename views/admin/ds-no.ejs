@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>File "DS nợ"</h1>
+    <p class="admin-main__desc">Xuất file để đo &amp; điền tay số đo cơ thể + size ngoài hệ thống, sau đó tải file đã điền lên lại.</p>
+
+    <% if (typeof ok !== 'undefined' && ok) { %><div class="alert alert--success">Đã cập nhật dữ liệu từ file DS nợ thành công.</div><% } %>
+    <% if (uploadErrors) { %>
+      <div class="alert alert--error"><b>Không nhập được file:</b><ul><% uploadErrors.forEach(e => { %><li><%= e %></li><% }) %></ul></div>
+    <% } %>
+
+    <div class="card">
+      <h2 style="margin-top:0">1. Xuất file để đo &amp; điền size</h2>
+      <form method="get" action="/admin/ds-no/xuat.xlsx" class="form-row">
+        <div class="form-field">
+          <label>Lớp</label>
+          <select name="lop"><option value="">Toàn trường</option><% lopKhoiList.forEach(l => { %><option value="<%= l.lop %>"><%= l.lop %></option><% }) %></select>
+        </div>
+        <div class="form-field">
+          <label>Khối</label>
+          <select name="khoi"><option value="">Tất cả</option><% [...new Set(lopKhoiList.map(l=>l.khoi))].forEach(k => { %><option value="<%= k %>"><%= k %></option><% }) %></select>
+        </div>
+        <div class="form-field form-field--checkbox">
+          <input type="checkbox" id="onlyMissingSize" name="onlyMissingSize" value="1" />
+          <label for="onlyMissingSize" style="margin:0">Chỉ học sinh chưa có size</label>
+        </div>
+        <button class="btn btn-primary" type="submit">Tải file DS nợ (.xlsx)</button>
+      </form>
+    </div>
+
+    <% if (preview) { %>
+      <div class="card">
+        <h2 style="margin-top:0">2. Xem trước — <%= preview.filename %></h2>
+        <div class="diff-summary">
+          <div class="item"><b><%= preview.tongDong %></b>Tổng số dòng đọc được</div>
+          <div class="item"><b style="color:var(--warn)"><%= preview.soThayDoi %></b>Số lượng bị sửa khác hệ thống hiện có</div>
+        </div>
+        <% if (preview.changes.length > 0) { %>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>Mã HS</th><th>Loại</th><th>SL cũ</th><th>SL mới (trong file)</th></tr></thead>
+              <tbody>
+                <% preview.changes.forEach(c => { %>
+                  <tr><td><%= c.maHs %></td><td><%= c.codePrefix %></td><td class="num"><%= c.soLuongCu %></td><td class="num"><b><%= c.soLuongMoi %></b></td></tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size:0.78rem;color:var(--text-muted)">Số lượng trong file sẽ ghi đè số lượng hệ thống đang lưu (vd do hoàn tiền/huỷ đơn), có ghi lại lịch sử thay đổi.</p>
+        <% } %>
+        <form method="post" action="/admin/ds-no/upload/confirm" style="margin-top:10px">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <input type="hidden" name="token" value="<%= preview.token %>" />
+          <button class="btn btn-primary" type="submit">Xác nhận cập nhật dữ liệu</button>
+          <a class="btn btn-outline" href="/admin/ds-no">Huỷ</a>
+        </form>
+      </div>
+    <% } else if (session.role === 'admin') { %>
+      <div class="card">
+        <h2 style="margin-top:0">2. Tải file đã điền lên lại</h2>
+        <form method="post" action="/admin/ds-no/upload" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <div class="form-row">
+            <div class="form-field"><label>File Excel (.xlsx)</label><input type="file" name="file" accept=".xlsx" required /></div>
+            <button class="btn btn-primary" type="submit">Tải lên &amp; xem trước</button>
+          </div>
+        </form>
+      </div>
+    <% } %>
+
+    <h2>Lịch sử tải lên DS nợ</h2>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Thời gian</th><th>Người tải</th><th>File</th><th>Tổng dòng</th><th>Số dòng sửa SL</th></tr></thead>
+        <tbody>
+          <% history.forEach(h => { %>
+            <tr><td><%= h.uploaded_at %></td><td><%= h.nguoi_upload %></td><td><%= h.ten_file %></td><td class="num"><%= h.tong_dong %></td><td class="num"><%= h.so_dong_sua_so_luong %></td></tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

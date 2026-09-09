@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>Trang chủ</h1>
+    <p class="admin-main__desc">Tổng quan tình hình đăng ký và phát đồng phục toàn trường.</p>
+
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="stat-card__label">Học sinh đã đăng ký</div>
+        <div class="stat-card__value"><%= overview.tongHocSinhDangKy %></div>
+        <div class="stat-card__sub">/ <%= overview.tongHocSinhToanTruong %> học sinh đang học</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Tổng số món đăng ký</div>
+        <div class="stat-card__value"><%= overview.tongMonDangKy %></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Đã phát / Chưa phát</div>
+        <div class="stat-card__value"><%= overview.tongMonDaPhat %> / <%= overview.tongMonChuaPhat %></div>
+        <div class="progress-bar" style="margin-top:8px">
+          <div class="progress-bar__fill" style="width: <%= Math.round(overview.tyLeDaPhat * 100) %>%"></div>
+        </div>
+        <div class="stat-card__sub"><%= Math.round(overview.tyLeDaPhat * 100) %>% đã phát</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Học sinh còn thiếu size</div>
+        <div class="stat-card__value <%= overview.soHocSinhThieuSize > 0 ? 'warn' : '' %>"><%= overview.soHocSinhThieuSize %></div>
+        <div class="stat-card__sub"><a href="/admin/ds-no">Xuất DS nợ để đo &amp; điền size →</a></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Số lượng đăng ký theo loại trang phục</h2>
+      <div class="bar-chart">
+        <% const max = Math.max(1, ...categoryTotals.map(c => c.tong_dang_ky)); %>
+        <% categoryTotals.forEach(c => { %>
+          <div class="bar-chart__row">
+            <span><%= c.ten_hien_thi %></span>
+            <div class="bar-chart__track">
+              <div class="bar-chart__fill" style="width: <%= Math.round((c.tong_dang_ky / max) * 100) %>%"></div>
+            </div>
+            <span class="bar-chart__value"><%= c.tong_dang_ky %></span>
+          </div>
+        <% }) %>
+      </div>
+      <p style="margin:14px 0 0"><a href="/admin/bao-cao">Xem báo cáo chi tiết →</a></p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h2 style="margin-top:0">Việc cần làm</h2>
+        <p style="font-size:0.86rem; line-height:1.9">
+          📥 <a href="/admin/dang-ky/upload">Tải lên file đăng ký mới</a><br />
+          ⚠️ <a href="/admin/dang-ky/loi">Xử lý các dòng đăng ký lỗi</a><br />
+          📤 <a href="/admin/ds-no">Xuất file DS nợ để đo &amp; điền size</a><br />
+          ✅ <a href="/admin/dang-ky">Cập nhật trạng thái phát đồ</a>
+        </p>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0">Bắt đầu nhanh</h2>
+        <p style="font-size:0.86rem; line-height:1.9">
+          1. Cập nhật <a href="/admin/hoc-sinh">danh sách học sinh toàn trường</a><br />
+          2. Tải lên <a href="/admin/dang-ky/upload">file đăng ký từng đợt</a><br />
+          3. Xuất <a href="/admin/ds-no">file DS nợ</a>, đo &amp; điền size ngoài hệ thống<br />
+          4. Tải file đã điền lên lại, rồi đánh dấu <a href="/admin/dang-ky">phát đồ</a>
+        </p>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

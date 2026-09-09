@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>Danh sách học sinh toàn trường</h1>
+    <p class="admin-main__desc">Dùng để đối chiếu mã học sinh khi nhập file đăng ký. Tải lên file mới sẽ so sánh &amp; cập nhật danh sách hiện có (không xoá dữ liệu đăng ký/đo người liên quan).</p>
+
+    <% if (ok) { %><div class="alert alert--success">Đã cập nhật danh sách học sinh thành công.</div><% } %>
+    <% if (typeof uploadErrors !== 'undefined' && uploadErrors) { %>
+      <div class="alert alert--error">
+        <b>Không nhập được file:</b>
+        <ul><% uploadErrors.forEach(e => { %><li><%= e %></li><% }) %></ul>
+      </div>
+    <% } %>
+
+    <% if (preview) { %>
+      <div class="card">
+        <h2 style="margin-top:0">Xem trước thay đổi — <%= preview.filename %></h2>
+        <div class="diff-summary">
+          <div class="item"><b><%= preview.diff.tongMoi %></b>Tổng số dòng trong file</div>
+          <div class="item"><b style="color:var(--success)"><%= preview.diff.them.length %></b>Học sinh mới thêm</div>
+          <div class="item"><b style="color:var(--danger)"><%= preview.diff.xoa.length %></b>Học sinh bị xoá khỏi danh sách</div>
+          <div class="item"><b style="color:var(--warn)"><%= preview.diff.doiLop.length %></b>Học sinh đổi lớp</div>
+        </div>
+        <% if (preview.diff.xoa.length > 0) { %>
+          <p style="font-size:0.82rem; color:var(--text-muted)">Học sinh bị xoá (không còn trong file mới): <%= preview.diff.xoa.slice(0,20).map(s => `${s.ma_hs} - ${s.ho_ten}`).join(', ') %><% if (preview.diff.xoa.length > 20) { %> … và <%= preview.diff.xoa.length - 20 %> học sinh khác<% } %></p>
+        <% } %>
+        <form method="post" action="/admin/hoc-sinh/upload/confirm">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <input type="hidden" name="token" value="<%= preview.token %>" />
+          <button class="btn btn-primary" type="submit">Xác nhận ghi đè danh sách</button>
+          <a class="btn btn-outline" href="/admin/hoc-sinh">Huỷ</a>
+        </form>
+      </div>
+    <% } else if (session.role === 'admin') { %>
+      <div class="card">
+        <h2 style="margin-top:0">Tải lên / cập nhật danh sách</h2>
+        <form method="post" action="/admin/hoc-sinh/upload" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <div class="form-row">
+            <div class="form-field">
+              <label>File Excel (.xlsx)</label>
+              <input type="file" name="file" accept=".xlsx" required />
+            </div>
+            <button class="btn btn-primary" type="submit">Tải lên &amp; xem trước</button>
+          </div>
+        </form>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin:8px 0 0">Cần đủ 4 cột: Mã học sinh, Họ và tên, Lớp, Trạng thái. Nếu file có nhiều sheet, hệ thống tự chọn sheet có tên chứa "toàn trường".</p>
+      </div>
+    <% } %>
+
+    <h2>Tìm kiếm &amp; danh sách</h2>
+    <form method="get" class="form-row">
+      <div class="form-field">
+        <label>Tìm mã HS / tên</label>
+        <input type="text" name="q" value="<%= filters.q %>" placeholder="vd FHP31379 hoặc Việt An" />
+      </div>
+      <div class="form-field">
+        <label>Lớp</label>
+        <select name="lop">
+          <option value="">Tất cả</option>
+          <% lopKhoiList.forEach(l => { %><option value="<%= l.lop %>" <%= filters.lop === l.lop ? 'selected' : '' %>><%= l.lop %></option><% }) %>
+        </select>
+      </div>
+      <div class="form-field form-field--checkbox">
+        <input type="checkbox" id="includeDo" name="includeDo" value="1" <%= filters.includeDo === '1' ? 'checked' : '' %> />
+        <label for="includeDo" style="margin:0">Hiện cả học sinh đã nghỉ (DO)</label>
+      </div>
+      <button class="btn btn-outline" type="submit">Lọc</button>
+    </form>
+
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr><th>Mã HS</th><th>Họ và tên</th><th>Lớp</th><th>Khối</th><th>Trạng thái</th></tr>
+        </thead>
+        <tbody>
+          <% result.rows.forEach(s => { %>
+            <tr>
+              <td><%= s.ma_hs %></td>
+              <td><%= s.ho_ten %></td>
+              <td><%= s.lop || '' %></td>
+              <td><%= s.khoi || '' %></td>
+              <td><span class="badge <%= s.trang_thai_hoc === 'Đang học' ? 'badge--success' : 'badge--gray' %>"><%= s.trang_thai_hoc %></span></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px">Tổng <%= result.total %> học sinh.</p>
+
+    <h2>Lịch sử tải lên</h2>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Thời gian</th><th>Người tải</th><th>File</th><th>Tổng dòng</th><th>Thêm mới</th><th>Xoá</th><th>Đổi lớp</th></tr></thead>
+        <tbody>
+          <% history.forEach(h => { %>
+            <tr>
+              <td><%= h.uploaded_at %></td>
+              <td><%= h.nguoi_upload %></td>
+              <td><%= h.ten_file %></td>
+              <td class="num"><%= h.tong_dong %></td>
+              <td class="num"><%= h.so_them %></td>
+              <td class="num"><%= h.so_xoa %></td>
+              <td class="num"><%= h.so_doi_lop %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

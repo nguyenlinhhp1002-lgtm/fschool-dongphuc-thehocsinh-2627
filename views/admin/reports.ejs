@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+<%
+  function qsWith(extra) {
+    const params = new URLSearchParams();
+    if (filters.khoi) params.set('khoi', filters.khoi);
+    if (filters.lop) params.set('lop', filters.lop);
+    if (filters.batchId) params.set('batchId', filters.batchId);
+    if (groupBy) params.set('nhom', groupBy);
+    Object.entries(extra || {}).forEach(([k, v]) => { if (v) params.set(k, v); else params.delete(k); });
+    return '?' + params.toString();
+  }
+
+  // Pivot totalsByGroup: nhom -> code_prefix -> so_luong
+  const totalsPivot = new Map();
+  const nhomOrder = [];
+  totalsByGroup.forEach(r => {
+    if (!totalsPivot.has(r.nhom)) { totalsPivot.set(r.nhom, new Map()); nhomOrder.push(r.nhom); }
+    totalsPivot.get(r.nhom).set(r.code_prefix, r.so_luong);
+  });
+
+  // Pivot progressByGroup: nhom -> {tong_dang_ky, tong_da_phat} (tong theo nhom, khong theo loai)
+  const progressPivot = new Map();
+  progressByGroup.forEach(r => {
+    if (!progressPivot.has(r.nhom)) progressPivot.set(r.nhom, { dangKy: 0, daPhat: 0 });
+    const p = progressPivot.get(r.nhom);
+    p.dangKy += r.tong_dang_ky;
+    p.daPhat += r.tong_da_phat;
+  });
+%>
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>Báo cáo &amp; thống kê</h1>
+
+    <div class="stat-cards">
+      <div class="stat-card"><div class="stat-card__label">Học sinh đã đăng ký</div><div class="stat-card__value"><%= overview.tongHocSinhDangKy %></div></div>
+      <div class="stat-card"><div class="stat-card__label">Tổng số món đăng ký</div><div class="stat-card__value"><%= overview.tongMonDangKy %></div></div>
+      <div class="stat-card"><div class="stat-card__label">Đã phát / Chưa phát</div><div class="stat-card__value"><%= overview.tongMonDaPhat %> / <%= overview.tongMonChuaPhat %></div></div>
+      <div class="stat-card"><div class="stat-card__label">Thiếu size</div><div class="stat-card__value <%= overview.soHocSinhThieuSize > 0 ? 'warn' : '' %>"><%= overview.soHocSinhThieuSize %></div></div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Tổng số lượng đăng ký &amp; đã phát theo loại trang phục</h2>
+      <div class="bar-chart">
+        <% const max = Math.max(1, ...categoryTotals.map(c => c.tong_dang_ky)); %>
+        <% categoryTotals.forEach(c => { %>
+          <div class="bar-chart__row">
+            <span><%= c.ten_hien_thi %></span>
+            <div class="bar-chart__track">
+              <div class="bar-chart__fill" style="width: <%= Math.round((c.tong_dang_ky / max) * 100) %>%"></div>
+              <div class="bar-chart__fill bar-chart__fill--amber" style="width: <%= Math.round((c.tong_da_phat / max) * 100) %>%; margin-left: calc(-1 * <%= Math.round((c.tong_dang_ky / max) * 100) %>%)"></div>
+            </div>
+            <span class="bar-chart__value"><%= c.tong_da_phat %>/<%= c.tong_dang_ky %></span>
+          </div>
+        <% }) %>
+      </div>
+      <p style="font-size:0.76rem;color:var(--text-muted);margin:8px 0 0">Thanh xanh đậm = tổng đăng ký, phần cam chồng lên = đã phát.</p>
+    </div>
+
+    <h2>Bảng loại trang phục × size</h2>
+    <form method="get" class="form-row">
+      <input type="hidden" name="nhom" value="<%= groupBy %>" />
+      <div class="form-field"><label>Khối</label><select name="khoi"><option value="">Tất cả</option><% [...new Set(lopKhoiList.map(l=>l.khoi))].forEach(k => { %><option value="<%= k %>" <%= filters.khoi===k?'selected':'' %>><%= k %></option><% }) %></select></div>
+      <div class="form-field"><label>Lớp</label><select name="lop"><option value="">Tất cả</option><% lopKhoiList.forEach(l => { %><option value="<%= l.lop %>" <%= filters.lop===l.lop?'selected':'' %>><%= l.lop %></option><% }) %></select></div>
+      <div class="form-field"><label>Đợt đăng ký</label><select name="batchId"><option value="">Tất cả</option><% batches.forEach(b => { %><option value="<%= b.id %>" <%= String(filters.batchId)===String(b.id)?'selected':'' %>><%= b.ten_dot %></option><% }) %></select></div>
+      <button class="btn btn-outline" type="submit">Lọc</button>
+      <a class="btn btn-outline" href="/admin/bao-cao/xuat/kich-co.xlsx<%= qsWith() %>">⭳ Xuất Excel</a>
+    </form>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Loại trang phục</th><th>Size</th><th>Số lượng</th></tr></thead>
+        <tbody>
+          <% categories.forEach(cat => { %>
+            <% const sizes = sizeMatrix.matrix.get(cat.code_prefix); %>
+            <% if (sizes) { %>
+              <% [...sizes.entries()].forEach(([size, qty], i) => { %>
+                <tr><td><%= i === 0 ? cat.ten_hien_thi : '' %></td><td><%= size %></td><td class="num"><%= qty %></td></tr>
+              <% }) %>
+            <% } %>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Bảng tổng hợp theo nhóm</h2>
+    <div class="tabs">
+      <a href="<%= qsWith({nhom:'lop'}) %>" class="<%= groupBy==='lop'?'is-active':'' %>">Theo lớp</a>
+      <a href="<%= qsWith({nhom:'khoi'}) %>" class="<%= groupBy==='khoi'?'is-active':'' %>">Theo khối</a>
+      <a href="<%= qsWith({nhom:'batch'}) %>" class="<%= groupBy==='batch'?'is-active':'' %>">Theo đợt đăng ký</a>
+      <a class="btn-link" style="color:var(--navy-800);border-color:var(--navy-800)" href="/admin/bao-cao/xuat/nhom.xlsx?nhom=<%= groupBy %>">⭳ Xuất Excel</a>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr><th>Nhóm</th><% categories.forEach(c => { %><th><%= c.ten_hien_thi %></th><% }) %><th>Tổng</th></tr>
+        </thead>
+        <tbody>
+          <% nhomOrder.forEach(nhom => { %>
+            <tr>
+              <td><%= nhom %></td>
+              <% let tong = 0; %>
+              <% categories.forEach(c => { const v = totalsPivot.get(nhom).get(c.code_prefix) || 0; tong += v; %>
+                <td class="num"><%= v || '' %></td>
+              <% }) %>
+              <td class="num"><b><%= tong %></b></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Tiến độ phát đồ</h2>
+    <div class="tabs">
+      <span style="font-size:0.8rem;color:var(--text-muted);align-self:center">Nhóm theo: <%= groupBy === 'khoi' ? 'khối' : 'lớp' %> (dùng cùng lựa chọn ở bảng trên)</span>
+      <a class="btn-link" style="color:var(--navy-800);border-color:var(--navy-800)" href="/admin/bao-cao/xuat/tien-do.xlsx?nhom=<%= groupBy === 'khoi' ? 'khoi' : 'lop' %>">⭳ Xuất Excel</a>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Nhóm</th><th>Tổng đăng ký</th><th>Đã phát</th><th>Tỷ lệ</th></tr></thead>
+        <tbody>
+          <% [...progressPivot.entries()].forEach(([nhom, p]) => { %>
+            <tr>
+              <td><%= nhom %></td>
+              <td class="num"><%= p.dangKy %></td>
+              <td class="num"><%= p.daPhat %></td>
+              <td style="min-width:120px">
+                <div class="progress-bar"><div class="progress-bar__fill" style="width: <%= p.dangKy > 0 ? Math.round(p.daPhat/p.dangKy*100) : 0 %>%"></div></div>
+                <span style="font-size:0.75rem;color:var(--text-muted)"><%= p.dangKy > 0 ? Math.round(p.daPhat/p.dangKy*100) : 0 %>%</span>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

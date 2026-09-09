@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>Danh mục loại trang phục</h1>
+    <p class="admin-main__desc">Quy định tên các loại trang phục, tên cột khi xuất file "DS nợ", và các tên gọi ("Món") trong file đăng ký được nhận diện là loại này.</p>
+
+    <% categories.forEach(cat => { %>
+      <div class="card">
+        <form method="post" action="/admin/danh-muc/<%= cat.code_prefix %>">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <div class="form-row">
+            <div class="form-field"><label>Mã (<%= cat.code_prefix %>)</label><input type="text" value="<%= cat.code_prefix %>" disabled /></div>
+            <div class="form-field"><label>Tên hiển thị</label><input type="text" name="tenHienThi" value="<%= cat.ten_hien_thi %>" <%= session.role !== 'admin' ? 'disabled' : '' %> required /></div>
+            <div class="form-field"><label>Cột "SL" khi xuất DS nợ</label><input type="text" name="cotSl" value="<%= cat.cot_sl %>" <%= session.role !== 'admin' ? 'disabled' : '' %> required /></div>
+            <div class="form-field"><label>Cột "Size" khi xuất DS nợ</label><input type="text" name="cotSize" value="<%= cat.cot_size || '' %>" <%= session.role !== 'admin' ? 'disabled' : '' %> /></div>
+            <div class="form-field"><label>Thứ tự</label><input type="number" name="thuTu" value="<%= cat.thu_tu %>" style="min-width:70px" <%= session.role !== 'admin' ? 'disabled' : '' %> /></div>
+            <div class="form-field form-field--checkbox"><input type="checkbox" name="coSize" value="1" <%= cat.co_size ? 'checked' : '' %> <%= session.role !== 'admin' ? 'disabled' : '' %> /><label>Có size</label></div>
+            <div class="form-field form-field--checkbox"><input type="checkbox" name="active" value="1" <%= cat.active ? 'checked' : '' %> <%= session.role !== 'admin' ? 'disabled' : '' %> /><label>Đang dùng</label></div>
+            <% if (session.role === 'admin') { %><button class="btn btn-outline btn-sm" type="submit">Lưu</button><% } %>
+          </div>
+        </form>
+        <div style="font-size:0.82rem">
+          <b>Các tên "Món" được nhận diện:</b>
+          <% cat.aliases.forEach(a => { %>
+            <span class="badge badge--gray" style="margin:2px 4px 2px 0"><%= a.ten_goc %>
+              <% if (session.role === 'admin') { %>
+              <form method="post" action="/admin/danh-muc/alias/<%= a.id %>/xoa" style="display:inline">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" style="border:none;background:none;color:var(--danger);cursor:pointer;font-size:0.75rem" title="Xoá">✕</button>
+              </form>
+              <% } %>
+            </span>
+          <% }) %>
+          <% if (session.role === 'admin') { %>
+          <form method="post" action="/admin/danh-muc/<%= cat.code_prefix %>/alias" style="display:inline-flex;gap:4px;margin-left:8px">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="text" name="tenGoc" placeholder="Thêm tên gọi mới…" style="padding:3px 6px;border-radius:6px;border:1.5px solid var(--border-soft);font-size:0.78rem" />
+            <button class="btn btn-outline btn-sm" type="submit">Thêm</button>
+          </form>
+          <% } %>
+        </div>
+      </div>
+    <% }) %>
+
+    <% if (session.role === 'admin') { %>
+    <div class="card">
+      <h2 style="margin-top:0">Thêm loại trang phục mới</h2>
+      <form method="post" action="/admin/danh-muc">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div class="form-row">
+          <div class="form-field"><label>Mã (2 chữ cái)</label><input type="text" name="codePrefix" maxlength="4" required style="min-width:80px" /></div>
+          <div class="form-field"><label>Tên hiển thị</label><input type="text" name="tenHienThi" required /></div>
+          <div class="form-field"><label>Cột "SL" khi xuất</label><input type="text" name="cotSl" required /></div>
+          <div class="form-field"><label>Cột "Size" khi xuất</label><input type="text" name="cotSize" /></div>
+          <div class="form-field"><label>Thứ tự</label><input type="number" name="thuTu" value="99" style="min-width:70px" /></div>
+          <div class="form-field form-field--checkbox"><input type="checkbox" name="coSize" value="1" checked /><label>Có size</label></div>
+        </div>
+        <div class="form-field">
+          <label>Các tên "Món" khớp với loại này (mỗi dòng hoặc phẩy 1 tên)</label>
+          <textarea name="aliases" rows="2" style="width:100%"></textarea>
+        </div>
+        <button class="btn btn-primary" type="submit">Thêm loại trang phục</button>
+      </form>
+    </div>
+    <% } %>
+  </main>
+</body>
+</html>
