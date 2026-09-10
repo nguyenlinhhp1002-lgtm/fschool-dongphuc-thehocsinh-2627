@@ -44,8 +44,12 @@
         <h2 style="margin-top:0">2. Xem trước — <%= preview.filename %></h2>
         <div class="diff-summary">
           <div class="item"><b><%= preview.tongDong %></b>Tổng số dòng đọc được</div>
+          <div class="item"><b style="color:var(--success)"><%= preview.soOCoSize %></b>Ô size đọc được, sẽ được ghi nhận</div>
           <div class="item"><b style="color:var(--warn)"><%= preview.soThayDoi %></b>Số lượng bị sửa khác hệ thống hiện có</div>
         </div>
+        <% if (preview.soOCoSize === 0) { %>
+          <div class="alert alert--warn">File này không có ô size nào được điền — nếu bạn đã điền size trong file, kiểm tra lại đúng cột (vd "Size chung", "Size Quần váy/Chân váy"...) và đúng tên cột như file mẫu mới nhất.</div>
+        <% } %>
         <% if (preview.changes.length > 0) { %>
           <div class="table-scroll">
             <table class="data-table">

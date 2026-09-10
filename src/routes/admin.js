@@ -660,6 +660,7 @@ router.post(
     }
 
     const changes = await dsNoImport.tinhChenhLechSoLuong(parsed.rows);
+    const soOCoSize = dsNoImport.demSoOCoSize(parsed.rows);
     const token = pendingStore.put('dsNo', { rows: parsed.rows, filename: req.file.originalname, changes });
 
     const [lopKhoiList, history, batches] = await Promise.all([
@@ -681,6 +682,7 @@ router.post(
         tongDong: parsed.rows.length,
         changes: changes.slice(0, 30),
         soThayDoi: changes.length,
+        soOCoSize,
       },
     });
   })

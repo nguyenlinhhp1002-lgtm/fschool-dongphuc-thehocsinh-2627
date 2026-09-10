@@ -51,11 +51,29 @@ async function parseDsNoExcelBuffer(buffer) {
     const sizeColName = group ? group.cot_size : cat.cot_size;
     return {
       codePrefix: cat.code_prefix,
+      tenHienThi: cat.ten_hien_thi,
       coSize: cat.co_size,
+      cotSl: cat.cot_sl,
+      cotSize: sizeColName,
       slIdx: headerRow.indexOf(cat.cot_sl),
       sizeIdx: cat.co_size && sizeColName ? headerRow.indexOf(sizeColName) : -1,
     };
   });
+
+  // Neu ten cot trong file khong khop voi mau hien tai (file cu, danh muc da doi ten cot...),
+  // cot do se bi bo qua AM THAM cho MOI dong neu khong kiem tra - canh bao ro thay vi de
+  // size/so luong bi mat ma khong ai biet.
+  const cotThieu = [];
+  for (const cc of catCols) {
+    if (cc.slIdx < 0) cotThieu.push(`"${cc.cotSl}" (SL ${cc.tenHienThi})`);
+    else if (cc.coSize && cc.cotSize && cc.sizeIdx < 0) cotThieu.push(`"${cc.cotSize}" (Size ${cc.tenHienThi})`);
+  }
+  if (cotThieu.length > 0) {
+    throw new ExcelValidationError([
+      `File không khớp với mẫu hiện tại — thiếu các cột: ${[...new Set(cotThieu)].join(', ')}.`,
+      'Có thể file đang dùng là bản mẫu cũ, hoặc tên cột trong "Danh mục" đã được đổi. Vui lòng tải lại file mẫu mới nhất (nút "Tải file DS đăng ký có size" ở trang này) rồi điền lại.',
+    ]);
+  }
 
   const rows = [];
   for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber += 1) {
@@ -121,6 +139,17 @@ async function tinhChenhLechSoLuong(rows) {
     }
   }
   return changes;
+}
+
+/** Dem so o size (khac rong) doc duoc trong file - hien thi tren man hinh xem truoc de xac nhan da doc duoc size, khong phai import "khong lam gi". */
+function demSoOCoSize(rows) {
+  let count = 0;
+  for (const item of rows) {
+    for (const cat of item.categories) {
+      if (cat.size) count += 1;
+    }
+  }
+  return count;
 }
 
 /**
@@ -192,6 +221,7 @@ async function getDsNoUploadHistory() {
 module.exports = {
   parseDsNoExcelBuffer,
   tinhChenhLechSoLuong,
+  demSoOCoSize,
   commitDsNoImport,
   ghiAuditSoLuong,
   logDsNoUpload,
