@@ -303,11 +303,15 @@ let schemaReadyPromise = null;
 /** Dam bao schema (bang + du lieu mac dinh) da san sang, chi chay 1 lan du goi nhieu lan (memoized). */
 function ensureSchema() {
   if (!schemaReadyPromise) {
+    // seedSizeGroupsIfEmpty phai chay TRUOC seedCategoriesIfEmpty: tren DB hoan toan moi,
+    // uniform_categories.size_group_code tham chieu size_groups(code) qua FOREIGN KEY, nen
+    // size_groups can co san du lieu truoc khi insert danh muc (Turso/libsql remote co bat
+    // che do enforce FK, khac voi file SQLite local nen loi nay khong lo ra khi test local).
     schemaReadyPromise = db
       .executeMultiple(SCHEMA_SQL)
       .then(migrateColumns)
-      .then(seedCategoriesIfEmpty)
-      .then(seedSizeGroupsIfEmpty);
+      .then(seedSizeGroupsIfEmpty)
+      .then(seedCategoriesIfEmpty);
   }
   return schemaReadyPromise;
 }
