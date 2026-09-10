@@ -602,10 +602,11 @@ router.get(
 router.get(
   '/ds-no/xuat.xlsx',
   asyncHandler(async (req, res) => {
-    const { lop = '', khoi = '', onlyMissingSize, batchId = '' } = req.query;
+    const { lop = '', khoi = '', q = '', onlyMissingSize, batchId = '' } = req.query;
     const { buffer, rowCount } = await buildDsNoWorkbook({
       lop: lop || undefined,
       khoi: khoi || undefined,
+      q: q || undefined,
       onlyMissingSize: onlyMissingSize === '1',
       batchId: batchId ? Number(batchId) : undefined,
     });

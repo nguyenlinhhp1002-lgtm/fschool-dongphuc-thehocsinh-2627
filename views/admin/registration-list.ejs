@@ -31,7 +31,9 @@
         </select>
       </div>
       <button class="btn btn-outline" type="submit">Lọc</button>
+      <a class="btn btn-primary" href="/admin/ds-no/xuat.xlsx<%= qs.toString() ? '?' + qs.toString() : '' %>">⭳ Tải file DS đăng ký có size</a>
     </form>
+    <p style="font-size:0.78rem; color:var(--text-muted); margin:-8px 0 12px">File tải xuống lấy đúng dữ liệu mới nhất đang hiển thị ở đây (kể cả size vừa sửa trực tiếp trên bảng), theo bộ lọc Mã HS/tên, Lớp, Khối hiện tại.</p>
 
     <% if (session.role === 'admin' && filters.lop) { %>
     <div class="card" style="padding:12px 16px">
