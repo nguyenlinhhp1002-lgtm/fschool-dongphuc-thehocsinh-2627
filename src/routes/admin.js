@@ -61,6 +61,7 @@ const { buildRegistrationRows } = require('../registrationTable');
 
 const { parseClassAccountsBuffer } = require('../classAccountImport');
 const classAccountsRepo = require('../classAccountsRepo');
+const traCuuAccountRepo = require('../traCuuAccountRepo');
 
 /** Xay lai query string tu 1 object (bo qua gia tri rong), dung de "quay lai trang cu voi bo loc cu" sau khi POST. */
 function toQueryString(params) {
@@ -74,8 +75,14 @@ function toQueryString(params) {
 
 // ---------- Dang nhap / dang xuat ----------
 
+function redirectAfterLogin(role) {
+  if (role === 'lop') return '/admin/lop';
+  if (role === 'tra_cuu') return '/tra-cuu/dong-phuc';
+  return '/admin';
+}
+
 router.get('/login', (req, res) => {
-  if (req.session.adminId) return res.redirect('/admin');
+  if (req.session.adminId) return res.redirect(redirectAfterLogin(req.session.role));
   res.render('admin/login', { csrfToken: ensureCsrfToken(req), error: null });
 });
 
@@ -100,7 +107,7 @@ router.post(
     req.session.username = admin.username;
     req.session.role = admin.role;
     req.session.lop = admin.lop || null;
-    res.redirect(admin.role === 'lop' ? '/admin/lop' : '/admin');
+    res.redirect(redirectAfterLogin(admin.role));
   })
 );
 
@@ -113,9 +120,13 @@ router.use(requireAdmin);
 
 // Tai khoan role='lop' chi duoc xem trang /admin/lop cua rieng lop minh, khong duoc vao
 // bat ky route quan tri nao khac (kho ke ca cac route GET/xem, de tranh lo du lieu lop khac).
+// Tai khoan role='tra_cuu' khong co trang admin nao ca - chi dung de dang nhap xem /tra-cuu.
 router.use((req, res, next) => {
   if (req.session.role === 'lop' && req.path !== '/lop') {
     return res.redirect('/admin/lop');
+  }
+  if (req.session.role === 'tra_cuu') {
+    return res.redirect('/tra-cuu/dong-phuc');
   }
   next();
 });
@@ -1115,6 +1126,61 @@ router.post(
   asyncHandler(async (req, res) => {
     await classAccountsRepo.deleteClassAccount(req.body.id);
     res.redirect('/admin/tai-khoan-lop');
+  })
+);
+
+// ---------- Tai khoan chung don gian de dang nhap xem trang /tra-cuu (chi admin toan quyen) ----------
+
+router.get(
+  '/tai-khoan-tra-cuu',
+  requireFullAdmin,
+  asyncHandler(async (req, res) => {
+    const account = await traCuuAccountRepo.getTraCuuAccount();
+    res.render('admin/tra-cuu-account', {
+      ...baseLocals(req),
+      pageTitle: 'Tài khoản xem trang tra cứu',
+      activeNav: 'tra-cuu-account',
+      account,
+      error: null,
+      ok: req.query.ok === '1',
+    });
+  })
+);
+
+router.post(
+  '/tai-khoan-tra-cuu',
+  requireFullAdmin,
+  verifyCsrfToken,
+  asyncHandler(async (req, res) => {
+    const username = String(req.body.username || '').trim();
+    const password = String(req.body.password || '');
+
+    if (!username || !password) {
+      const account = await traCuuAccountRepo.getTraCuuAccount();
+      return res.render('admin/tra-cuu-account', {
+        ...baseLocals(req),
+        pageTitle: 'Tài khoản xem trang tra cứu',
+        activeNav: 'tra-cuu-account',
+        account,
+        error: 'Vui lòng nhập đủ tên đăng nhập và mật khẩu.',
+        ok: false,
+      });
+    }
+
+    try {
+      await traCuuAccountRepo.setTraCuuAccount({ username, password });
+    } catch (err) {
+      const account = await traCuuAccountRepo.getTraCuuAccount();
+      return res.render('admin/tra-cuu-account', {
+        ...baseLocals(req),
+        pageTitle: 'Tài khoản xem trang tra cứu',
+        activeNav: 'tra-cuu-account',
+        account,
+        error: 'Tên đăng nhập này đã được dùng cho 1 tài khoản khác. Vui lòng chọn tên khác.',
+        ok: false,
+      });
+    }
+    res.redirect('/admin/tai-khoan-tra-cuu?ok=1');
   })
 );
 

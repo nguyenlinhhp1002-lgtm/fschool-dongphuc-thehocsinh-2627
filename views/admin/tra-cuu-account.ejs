@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>Tài khoản xem trang tra cứu</h1>
+    <p class="admin-main__desc">Trang công khai <code>/tra-cuu/dong-phuc</code> (và <code>/tra-cuu/the-hoc-sinh</code>) nay yêu cầu đăng nhập. Dùng 1 tài khoản đơn giản dưới đây để chia sẻ cho GVCN/bộ phận liên quan xem toàn trường (không sửa được gì) — không cần cấp tài khoản quản trị đầy đủ.</p>
+
+    <% if (ok) { %><div class="alert alert--success">Đã lưu tài khoản. Có thể đăng nhập ngay tại <code>/admin/login</code>.</div><% } %>
+    <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+    <div class="card">
+      <h2 style="margin-top:0"><%= account ? 'Cập nhật tài khoản hiện có' : 'Tạo tài khoản' %></h2>
+      <% if (account) { %>
+        <p style="font-size:0.85rem; color:var(--text-muted)">Tên đăng nhập hiện tại: <b><%= account.username %></b> (tạo lúc <%= account.created_at %>). Nhập thông tin bên dưới để đổi tên đăng nhập/mật khẩu.</p>
+      <% } %>
+      <form method="post" action="/admin/tai-khoan-tra-cuu" class="form-row">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div class="form-field">
+          <label>Tên đăng nhập</label>
+          <input type="text" name="username" value="<%= account ? account.username : '' %>" required />
+        </div>
+        <div class="form-field">
+          <label>Mật khẩu <%= account ? 'mới' : '' %></label>
+          <input type="password" name="password" required />
+        </div>
+        <button class="btn btn-primary" type="submit"><%= account ? 'Cập nhật' : 'Tạo tài khoản' %></button>
+      </form>
+      <p style="font-size:0.78rem; color:var(--text-muted); margin:8px 0 0">Mật khẩu được mã hoá ngay khi lưu, hệ thống không hiển thị lại ở bất kỳ đâu — hãy tự ghi nhớ/lưu lại.</p>
+    </div>
+  </main>
+</body>
+</html>

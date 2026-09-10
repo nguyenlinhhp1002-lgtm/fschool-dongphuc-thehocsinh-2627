@@ -25,6 +25,7 @@
     <a href="/admin/dot-dang-ky" class="sidebar__link <%= activeNav === 'batches' ? 'is-active' : '' %>" title="Đợt đăng ký"><span class="sidebar__icon">🗓️</span><span class="sidebar__label">Đợt đăng ký</span></a>
     <% if (session.role === 'admin') { %>
     <a href="/admin/tai-khoan-lop" class="sidebar__link <%= activeNav === 'class-accounts' ? 'is-active' : '' %>" title="Tài khoản theo lớp"><span class="sidebar__icon">🔑</span><span class="sidebar__label">Tài khoản theo lớp</span></a>
+    <a href="/admin/tai-khoan-tra-cuu" class="sidebar__link <%= activeNav === 'tra-cuu-account' ? 'is-active' : '' %>" title="Tài khoản xem trang tra cứu"><span class="sidebar__icon">🔎</span><span class="sidebar__label">Tài khoản xem tra cứu</span></a>
     <% } %>
   </nav>
 

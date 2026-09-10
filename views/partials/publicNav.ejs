@@ -9,6 +9,9 @@
   </nav>
   <div class="admin-header__user">
     <img src="/img/kien-yeu-thuong.png" alt="Kiến Sáng" class="admin-header__mascot" />
-    <a href="/admin/login" class="btn-link">Đăng nhập quản trị</a>
+    <form method="post" action="/admin/logout" style="margin:0">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button class="btn-link" type="submit">Đăng xuất</button>
+    </form>
   </div>
 </header>
