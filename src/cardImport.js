@@ -1,5 +1,5 @@
 const ExcelJS = require('exceljs');
-const { ExcelValidationError, cellToString, cellToNumber, readHeaderRowTrimmed } = require('./excelHelpers');
+const { ExcelValidationError, cellToString, cellToNumber, readHeaderRowTrimmed, findColumnIndex } = require('./excelHelpers');
 
 const REQUIRED_COLUMNS = ['StudentCode', 'Amount'];
 const OPTIONAL_COLUMNS = ['StudentName', 'PaidDate', 'Đợt đăng ký'];
@@ -27,14 +27,14 @@ async function parseCardExcelBuffer(buffer) {
   }
 
   const headerRow = readHeaderRowTrimmed(sheet);
-  const missingColumns = REQUIRED_COLUMNS.filter((col) => !headerRow.includes(col));
+  const missingColumns = REQUIRED_COLUMNS.filter((col) => findColumnIndex(headerRow, col) < 0);
   if (missingColumns.length > 0) {
     throw new ExcelValidationError([`File thiếu cột bắt buộc: ${missingColumns.join(', ')}.`]);
   }
 
   const colIndex = {};
   [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS].forEach((col) => {
-    const idx = headerRow.indexOf(col);
+    const idx = findColumnIndex(headerRow, col);
     if (idx >= 0) colIndex[col] = idx;
   });
 

@@ -30,9 +30,37 @@ function cellToNumber(value) {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Chuan hoa text de so khop khong phan biet hoa/thuong, khoang trang thua: trim + lowercase + gom khoang trang. */
+/**
+ * Chuan hoa text de so khop khong phan biet hoa/thuong, khoang trang thua, dang Unicode, hay
+ * ky tu vo hinh: normalize('NFC') (vd file tao tren may khac co the luu "ế" dang ky tu to hop
+ * "e" + dau, nhin giong het nhung so sanh chuoi truc tiep se KHONG khop) + bo ky tu rong/BOM
+ * (zero-width space...  - \s khong bat duoc nhung van co the lot vao khi copy-paste tu noi
+ * khac) + trim + lowercase + gom khoang trang.
+ */
+// Cac ky tu Unicode "vo hinh" hay lot vao khi copy-paste (zero-width space/joiner, BOM, soft
+// hyphen) - dung ma so thap phan (khong go truc tiep ky tu) de tranh chinh file nguon bi dinh
+// ky tu vo hinh that su.
+const MA_KY_TU_VO_HINH = [0x200b, 0x200c, 0x200d, 0xfeff, 0x00ad];
+const KY_TU_VO_HINH = new RegExp('[' + MA_KY_TU_VO_HINH.map((c) => String.fromCharCode(c)).join('') + ']', 'g');
+
 function normalizeText(text) {
-  return String(text || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  return String(text || '')
+    .normalize('NFC')
+    .replace(KY_TU_VO_HINH, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+/**
+ * Tim vi tri 1 cot trong hang header theo ten, so khop qua normalizeText() (khong phan biet
+ * hoa/thuong, khoang trang thua, dang Unicode) thay vi so sanh chuoi tuyet doi - tranh bo sot
+ * cot chi vi khac 1 khoang trang/hoa-thuong/dang encode ma mat thuong khong thay duoc.
+ * Tra ve -1 neu khong tim thay.
+ */
+function findColumnIndex(headerRow, expectedName) {
+  const target = normalizeText(expectedName);
+  return headerRow.findIndex((h) => normalizeText(h) === target);
 }
 
 /** Ngay dang dd/mm/yyyy (chuoi) -> Date, hoac null neu khong parse duoc. */
@@ -89,5 +117,6 @@ module.exports = {
   formatDateVN,
   readHeaderRow,
   readHeaderRowTrimmed,
+  findColumnIndex,
   normalizeGioiTinh,
 };

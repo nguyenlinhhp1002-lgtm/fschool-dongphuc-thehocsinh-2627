@@ -1,5 +1,5 @@
 const ExcelJS = require('exceljs');
-const { ExcelValidationError, cellToString, cellToNumber, readHeaderRow } = require('./excelHelpers');
+const { ExcelValidationError, cellToString, cellToNumber, readHeaderRow, findColumnIndex } = require('./excelHelpers');
 
 const REQUIRED_COLUMNS = ['RollNumber', 'Món', 'Số lượng', 'Trạng thái thanh toán'];
 const OPTIONAL_COLUMNS = ['Tên', 'Email', 'Size', 'Đơn giá', 'Tổng tiền', 'PaymentDate', 'Tháng', 'Đợt đăng ký'];
@@ -34,7 +34,7 @@ async function parseRegistrationExcelBuffer(buffer) {
   }
 
   const headerRow = readHeaderRow(sheet);
-  const missingColumns = REQUIRED_COLUMNS.filter((col) => !headerRow.includes(col));
+  const missingColumns = REQUIRED_COLUMNS.filter((col) => findColumnIndex(headerRow, col) < 0);
   if (missingColumns.length > 0) {
     throw new ExcelValidationError([
       `File thiếu cột bắt buộc: ${missingColumns.join(', ')}. File đăng ký cần đúng định dạng cột chuẩn (xem hướng dẫn).`,
@@ -43,7 +43,7 @@ async function parseRegistrationExcelBuffer(buffer) {
 
   const colIndex = {};
   [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS].forEach((col) => {
-    const idx = headerRow.indexOf(col);
+    const idx = findColumnIndex(headerRow, col);
     if (idx >= 0) colIndex[col] = idx;
   });
 

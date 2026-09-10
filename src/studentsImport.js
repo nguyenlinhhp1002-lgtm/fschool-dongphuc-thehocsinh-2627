@@ -1,5 +1,5 @@
 const ExcelJS = require('exceljs');
-const { ExcelValidationError, cellToString, readHeaderRow, normalizeGioiTinh } = require('./excelHelpers');
+const { ExcelValidationError, cellToString, readHeaderRow, findColumnIndex, normalizeGioiTinh } = require('./excelHelpers');
 
 const REQUIRED_COLUMNS = ['Mã học sinh', 'Họ và tên', 'Lớp', 'Trạng thái'];
 const OPTIONAL_COLUMNS = ['Giới tính'];
@@ -45,7 +45,7 @@ async function parseStudentsExcelBuffer(buffer, tenSheetChiDinh) {
   }
 
   const headerRow = readHeaderRow(sheet);
-  const missingColumns = REQUIRED_COLUMNS.filter((col) => !headerRow.includes(col));
+  const missingColumns = REQUIRED_COLUMNS.filter((col) => findColumnIndex(headerRow, col) < 0);
   if (missingColumns.length > 0) {
     throw new ExcelValidationError([
       `Sheet "${sheet.name}" thiếu cột bắt buộc: ${missingColumns.join(', ')}. Cần đủ 4 cột: Mã học sinh, Họ và tên, Lớp, Trạng thái. Thử chọn sheet khác nếu file có nhiều sheet.`,
@@ -54,7 +54,7 @@ async function parseStudentsExcelBuffer(buffer, tenSheetChiDinh) {
 
   const colIndex = {};
   [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS].forEach((col) => {
-    const idx = headerRow.indexOf(col);
+    const idx = findColumnIndex(headerRow, col);
     if (idx >= 0) colIndex[col] = idx;
   });
 

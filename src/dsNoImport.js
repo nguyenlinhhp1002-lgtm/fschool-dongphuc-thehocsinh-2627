@@ -1,6 +1,6 @@
 const ExcelJS = require('exceljs');
 const { db } = require('./db');
-const { ExcelValidationError, cellToString, cellToNumber, readHeaderRowTrimmed } = require('./excelHelpers');
+const { ExcelValidationError, cellToString, cellToNumber, readHeaderRowTrimmed, findColumnIndex } = require('./excelHelpers');
 const { getActiveCategories, getSizeGroupsMap } = require('./categoriesRepo');
 const { getAllSummaryGrouped, getAllMeasurementsMap } = require('./summaryRepo');
 
@@ -34,18 +34,21 @@ async function parseDsNoExcelBuffer(buffer) {
   }
 
   const headerRow = readHeaderRowTrimmed(sheet);
-  if (!headerRow.includes(COT_CO_BAN.maHs)) {
+  if (findColumnIndex(headerRow, COT_CO_BAN.maHs) < 0) {
     throw new ExcelValidationError([`File thiếu cột bắt buộc: "${COT_CO_BAN.maHs}".`]);
   }
 
   const idx = {};
   Object.entries(COT_CO_BAN).forEach(([key, colName]) => {
-    const i = headerRow.indexOf(colName);
+    const i = findColumnIndex(headerRow, colName);
     if (i >= 0) idx[key] = i;
   });
 
   // Danh muc thuoc 1 size_group dung chung cot size cua nhom (vd "Size chung"); danh muc
-  // khong thuoc nhom nao dung cot size rieng cua no nhu truoc.
+  // khong thuoc nhom nao dung cot size rieng cua no nhu truoc. So khop ten cot qua
+  // findColumnIndex (khong phan biet hoa/thuong, khoang trang thua, dang Unicode NFC/NFD)
+  // thay vi so sanh chuoi tuyet doi, vi 2 chuoi "giong het" khi nhin co the khac nhau ve byte
+  // (vd file tao tren may/ung dung khac).
   const catCols = categories.map((cat) => {
     const group = cat.size_group_code ? sizeGroupsMap.get(cat.size_group_code) : null;
     const sizeColName = group ? group.cot_size : cat.cot_size;
@@ -55,8 +58,8 @@ async function parseDsNoExcelBuffer(buffer) {
       coSize: cat.co_size,
       cotSl: cat.cot_sl,
       cotSize: sizeColName,
-      slIdx: headerRow.indexOf(cat.cot_sl),
-      sizeIdx: cat.co_size && sizeColName ? headerRow.indexOf(sizeColName) : -1,
+      slIdx: findColumnIndex(headerRow, cat.cot_sl),
+      sizeIdx: cat.co_size && sizeColName ? findColumnIndex(headerRow, sizeColName) : -1,
     };
   });
 
