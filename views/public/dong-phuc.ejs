@@ -30,7 +30,7 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th class="sticky-col" rowspan="2">Mã HS</th><th rowspan="2">Họ tên</th><th rowspan="2">Lớp</th>
+            <th class="sticky-col" rowspan="2">Họ tên</th><th rowspan="2">Lớp</th>
             <% categories.forEach(c => { %><th colspan="<%= c.co_size ? 3 : 2 %>"><%= c.ten_hien_thi %></th><% }) %>
           </tr>
           <tr>
@@ -42,8 +42,7 @@
         <tbody>
           <% rows.forEach(r => { %>
             <tr>
-              <td class="sticky-col"><%= r.student.ma_hs %></td>
-              <td><%= r.student.ho_ten %></td>
+              <td class="sticky-col"><%= r.student.ho_ten %></td>
               <td><%= r.student.lop %></td>
               <% r.cells.forEach(cell => { %>
                 <% if (cell.soLuong === 0) { %>

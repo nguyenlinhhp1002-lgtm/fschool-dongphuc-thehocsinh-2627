@@ -32,14 +32,13 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Mã HS</th><th>Họ tên</th><th>Lớp</th><th>Ngày đăng ký</th><th>Đợt đăng ký</th>
+            <th>Họ tên</th><th>Lớp</th><th>Ngày đăng ký</th><th>Đợt đăng ký</th>
             <th>Thẻ học sinh</th><th>Bộ dây bao thẻ</th><th>Trạng thái</th>
           </tr>
         </thead>
         <tbody>
           <% result.rows.forEach(r => { %>
             <tr>
-              <td><%= r.ma_hs %></td>
               <td><%= r.ho_ten || '—' %></td>
               <td><%= r.lop || '' %></td>
               <td><%= r.ngay_dang_ky || '' %></td>
@@ -50,7 +49,7 @@
             </tr>
           <% }) %>
           <% if (result.rows.length === 0) { %>
-            <tr><td colspan="8" style="text-align:center;color:var(--text-muted)">Không có dòng nào khớp bộ lọc.</td></tr>
+            <tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Không có dòng nào khớp bộ lọc.</td></tr>
           <% } %>
         </tbody>
       </table>
