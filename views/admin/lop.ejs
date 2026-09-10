@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="public-page">
+  <%- include('../partials/lopNav', { lop, csrfToken }) %>
+  <main class="admin-main">
+    <h1>Lớp <%= lop %> — Tra cứu đăng ký</h1>
+    <p class="admin-main__desc">Chỉ xem được dữ liệu của lớp mình, không chỉnh sửa được. Tải lại trang để xem trạng thái mới nhất.</p>
+
+    <h2>Đăng ký &amp; phát đồng phục</h2>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="sticky-col" rowspan="2">Họ tên</th>
+            <% categories.forEach(c => { %><th colspan="<%= c.co_size ? 3 : 2 %>"><%= c.ten_hien_thi %></th><% }) %>
+          </tr>
+          <tr>
+            <% categories.forEach(c => { %>
+              <th>SL</th><% if (c.co_size) { %><th>Size</th><% } %><th>Trạng thái</th>
+            <% }) %>
+          </tr>
+        </thead>
+        <tbody>
+          <% dongPhucRows.forEach(r => { %>
+            <tr>
+              <td class="sticky-col"><%= r.student.ho_ten %></td>
+              <% r.cells.forEach(cell => { %>
+                <% if (cell.soLuong === 0) { %>
+                  <td colspan="<%= cell.coSize ? 3 : 2 %>" style="color:var(--border-soft); text-align:center">–</td>
+                <% } else { %>
+                  <td class="num"><%= cell.soLuong %></td>
+                  <% if (cell.coSize) { %><td><%= cell.size || '—' %></td><% } %>
+                  <td>
+                    <span class="badge <%= cell.trangThaiPhat === 'da_phat_du' ? 'badge--success' : cell.trangThaiPhat === 'mot_phan' ? 'badge--warn' : 'badge--gray' %>">
+                      <%= cell.trangThaiPhat === 'da_phat_du' ? 'Đã phát' : cell.trangThaiPhat === 'mot_phan' ? `${cell.daPhat}/${cell.soLuong}` : 'Chưa phát' %>
+                    </span>
+                  </td>
+                <% } %>
+              <% }) %>
+            </tr>
+          <% }) %>
+          <% if (dongPhucRows.length === 0) { %>
+            <tr><td colspan="99" style="text-align:center;color:var(--text-muted)">Lớp chưa có học sinh nào đăng ký.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px">Tổng <%= dongPhucRows.length %> học sinh có đăng ký.</p>
+
+    <h2>Đăng ký thẻ học sinh</h2>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Họ tên</th><th>Ngày đăng ký</th><th>Đợt đăng ký</th>
+            <th>Thẻ học sinh</th><th>Bộ dây bao thẻ</th><th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% theRows.forEach(r => { %>
+            <tr>
+              <td><%= r.ho_ten || '—' %></td>
+              <td><%= r.ngay_dang_ky || '' %></td>
+              <td><%= r.dot_dang_ky || '' %></td>
+              <td><span class="badge <%= r.co_the ? 'badge--success' : 'badge--gray' %>"><%= r.co_the ? 'Có' : 'Không' %></span></td>
+              <td><span class="badge <%= r.co_day ? 'badge--success' : 'badge--gray' %>"><%= r.co_day ? 'Có' : 'Không' %></span></td>
+              <td><span class="badge <%= r.trang_thai === 'da_tra' ? 'badge--success' : 'badge--warn' %>"><%= r.trang_thai === 'da_tra' ? 'Đã trả' : 'Đang tiến hành' %></span></td>
+            </tr>
+          <% }) %>
+          <% if (theRows.length === 0) { %>
+            <tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Lớp chưa có học sinh nào đăng ký thẻ.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px">Tổng <%= theRows.length %> dòng.</p>
+  </main>
+</body>
+</html>

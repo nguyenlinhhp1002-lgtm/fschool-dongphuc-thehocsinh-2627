@@ -59,6 +59,9 @@ const cardRepo = require('../cardRepo');
 
 const { buildRegistrationRows } = require('../registrationTable');
 
+const { parseClassAccountsBuffer } = require('../classAccountImport');
+const classAccountsRepo = require('../classAccountsRepo');
+
 /** Xay lai query string tu 1 object (bo qua gia tri rong), dung de "quay lai trang cu voi bo loc cu" sau khi POST. */
 function toQueryString(params) {
   const qs = new URLSearchParams();
@@ -96,7 +99,8 @@ router.post(
     req.session.adminId = admin.id;
     req.session.username = admin.username;
     req.session.role = admin.role;
-    res.redirect('/admin');
+    req.session.lop = admin.lop || null;
+    res.redirect(admin.role === 'lop' ? '/admin/lop' : '/admin');
   })
 );
 
@@ -107,12 +111,45 @@ router.post('/logout', requireAdmin, (req, res) => {
 // Tu day tro xuong, moi route deu yeu cau da dang nhap.
 router.use(requireAdmin);
 
+// Tai khoan role='lop' chi duoc xem trang /admin/lop cua rieng lop minh, khong duoc vao
+// bat ky route quan tri nao khac (kho ke ca cac route GET/xem, de tranh lo du lieu lop khac).
+router.use((req, res, next) => {
+  if (req.session.role === 'lop' && req.path !== '/lop') {
+    return res.redirect('/admin/lop');
+  }
+  next();
+});
+
 function baseLocals(req) {
   return {
     session: req.session,
     csrfToken: ensureCsrfToken(req),
   };
 }
+
+// ---------- Trang rieng cho tai khoan role='lop' (chi xem, khong sua) ----------
+
+router.get(
+  '/lop',
+  asyncHandler(async (req, res) => {
+    if (req.session.role !== 'lop' || !req.session.lop) {
+      return res.redirect('/admin');
+    }
+    const lop = req.session.lop;
+    const [{ rows: dongPhucRows, categories }, theResult] = await Promise.all([
+      buildRegistrationRows({ lop }),
+      cardRepo.searchCardItems({ lop, page: 1, pageSize: 10000 }),
+    ]);
+    res.render('admin/lop', {
+      ...baseLocals(req),
+      pageTitle: `Lớp ${lop} — Tra cứu`,
+      lop,
+      dongPhucRows,
+      categories,
+      theRows: theResult.rows,
+    });
+  })
+);
 
 // ---------- Trang chu / Dashboard ----------
 
@@ -976,6 +1013,108 @@ router.post(
     }
     if (isAjax) return res.json({ ok: true });
     res.redirect(returnTo && returnTo.startsWith('/admin/the-hoc-sinh') ? returnTo : '/admin/the-hoc-sinh');
+  })
+);
+
+// ---------- Quan ly tai khoan tra cuu theo lop (chi admin toan quyen) ----------
+
+router.get(
+  '/tai-khoan-lop',
+  requireFullAdmin,
+  asyncHandler(async (req, res) => {
+    const accounts = await classAccountsRepo.getAllClassAccounts();
+    res.render('admin/class-accounts', {
+      ...baseLocals(req),
+      pageTitle: 'Tài khoản tra cứu theo lớp',
+      activeNav: 'class-accounts',
+      accounts,
+      preview: null,
+      uploadErrors: null,
+      ok: req.query.ok === '1',
+      soTao: req.query.soTao || 0,
+      soCapNhat: req.query.soCapNhat || 0,
+    });
+  })
+);
+
+router.post(
+  '/tai-khoan-lop/upload',
+  requireFullAdmin,
+  uploadExcel.single('file'),
+  asyncHandler(async (req, res) => {
+    if (!isCsrfTokenValid(req)) return renderCsrfError(res);
+
+    const renderWithError = async (errors) => {
+      const accounts = await classAccountsRepo.getAllClassAccounts();
+      res.render('admin/class-accounts', {
+        ...baseLocals(req),
+        pageTitle: 'Tài khoản tra cứu theo lớp',
+        activeNav: 'class-accounts',
+        accounts,
+        preview: null,
+        uploadErrors: errors,
+        ok: false,
+        soTao: 0,
+        soCapNhat: 0,
+      });
+    };
+
+    if (!req.file) return renderWithError(['Vui lòng chọn 1 file Excel (.xlsx) để tải lên.']);
+
+    let parsed;
+    try {
+      parsed = await parseClassAccountsBuffer(req.file.buffer);
+    } catch (err) {
+      if (err instanceof ExcelValidationError) return renderWithError(err.errors);
+      throw err;
+    }
+
+    // Chi giu lai trong bo nho tam de xac nhan - KHONG bao gio dua mat khau vao view xem truoc.
+    const token = pendingStore.put('classAccounts', { rows: parsed.rows, filename: req.file.originalname });
+    const accounts = await classAccountsRepo.getAllClassAccounts();
+    res.render('admin/class-accounts', {
+      ...baseLocals(req),
+      pageTitle: 'Tài khoản tra cứu theo lớp',
+      activeNav: 'class-accounts',
+      accounts,
+      uploadErrors: null,
+      ok: false,
+      soTao: 0,
+      soCapNhat: 0,
+      preview: {
+        token,
+        filename: req.file.originalname,
+        soDong: parsed.rows.length,
+        danhSachLop: [...new Set(parsed.rows.map((r) => r.lop))],
+      },
+    });
+  })
+);
+
+router.post(
+  '/tai-khoan-lop/upload/confirm',
+  requireFullAdmin,
+  verifyCsrfToken,
+  asyncHandler(async (req, res) => {
+    const pending = pendingStore.consume('classAccounts', req.body.token);
+    if (!pending) {
+      return res.status(400).render('admin/error', {
+        title: 'Phiên tải file đã hết hạn',
+        message: 'Dữ liệu xem trước đã hết hạn (quá 30 phút) hoặc đã được xác nhận trước đó. Vui lòng tải file lên lại.',
+      });
+    }
+    const { soTao, soCapNhat } = await classAccountsRepo.commitClassAccounts(pending.rows);
+    res.redirect(`/admin/tai-khoan-lop?ok=1&soTao=${soTao}&soCapNhat=${soCapNhat}`);
+  })
+);
+
+router.post(
+  '/tai-khoan-lop/xoa',
+  requireFullAdmin,
+  verifyCsrfToken,
+  asyncHandler(async (req, res) => {
+    await classAccountsRepo.deleteClassAccount(req.body.id);
+    res.redirect('/admin/tai-khoan-lop');
   })
 );
 

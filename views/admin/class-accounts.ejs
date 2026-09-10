@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>Tài khoản tra cứu theo lớp</h1>
+    <p class="admin-main__desc">Mỗi lớp có 1 tài khoản riêng, đăng nhập tại <code>/admin/login</code>, chỉ xem được đăng ký đồng phục &amp; thẻ học sinh của đúng lớp mình (không xem/sửa được lớp khác, không thấy Mã HS). Tải lên file gồm cột <b>Lớp, Account, Pass</b> (các cột khác trong file sẽ được bỏ qua) để tạo mới hoặc cập nhật lại mật khẩu hàng loạt.</p>
+
+    <% if (ok) { %><div class="alert alert--success">Đã ghi nhận: tạo mới <b><%= soTao %></b> tài khoản, cập nhật <b><%= soCapNhat %></b> tài khoản đã có.</div><% } %>
+    <% if (uploadErrors) { %>
+      <div class="alert alert--error"><b>Không nhập được file:</b><ul><% uploadErrors.forEach(e => { %><li><%= e %></li><% }) %></ul></div>
+    <% } %>
+
+    <% if (preview) { %>
+      <div class="card">
+        <h2 style="margin-top:0">Xem trước — <%= preview.filename %></h2>
+        <div class="diff-summary">
+          <div class="item"><b><%= preview.soDong %></b>Tổng số tài khoản đọc được</div>
+          <div class="item"><b><%= preview.danhSachLop.length %></b>Số lớp</div>
+        </div>
+        <p style="font-size:0.82rem; color:var(--text-muted)">Lớp: <%= preview.danhSachLop.join(', ') %></p>
+        <p style="font-size:0.82rem; color:var(--warn)">Mật khẩu trong file sẽ được mã hoá ngay khi xác nhận, hệ thống không hiển thị lại mật khẩu ở bất kỳ đâu — vui lòng lưu lại file gốc nếu cần tra cứu sau này.</p>
+        <form method="post" action="/admin/tai-khoan-lop/upload/confirm">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <input type="hidden" name="token" value="<%= preview.token %>" />
+          <button class="btn btn-primary" type="submit">Xác nhận tạo/cập nhật tài khoản</button>
+          <a class="btn btn-outline" href="/admin/tai-khoan-lop">Huỷ</a>
+        </form>
+      </div>
+    <% } else { %>
+      <div class="card">
+        <h2 style="margin-top:0">Tải lên file danh sách tài khoản</h2>
+        <form method="post" action="/admin/tai-khoan-lop/upload" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <div class="form-row">
+            <div class="form-field"><label>File Excel (.xlsx)</label><input type="file" name="file" accept=".xlsx" required /></div>
+            <button class="btn btn-primary" type="submit">Tải lên &amp; xem trước</button>
+          </div>
+        </form>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin:8px 0 0">Cần đủ 3 cột: Lớp, Account, Pass.</p>
+      </div>
+    <% } %>
+
+    <h2>Danh sách tài khoản hiện có</h2>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Lớp</th><th>Tài khoản</th><th>Ngày tạo</th><th></th></tr></thead>
+        <tbody>
+          <% accounts.forEach(a => { %>
+            <tr>
+              <td><%= a.lop %></td>
+              <td><%= a.username %></td>
+              <td><%= a.created_at %></td>
+              <td>
+                <form method="post" action="/admin/tai-khoan-lop/xoa" class="js-confirm" data-confirm-message="Xoá tài khoản <%= a.username %>?" style="margin:0">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="id" value="<%= a.id %>" />
+                  <button class="btn-sm" type="submit" title="Xoá tài khoản">🗑</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (accounts.length === 0) { %>
+            <tr><td colspan="4" style="text-align:center;color:var(--text-muted)">Chưa có tài khoản theo lớp nào.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px">Tổng <%= accounts.length %> tài khoản.</p>
+  </main>
+</body>
+</html>

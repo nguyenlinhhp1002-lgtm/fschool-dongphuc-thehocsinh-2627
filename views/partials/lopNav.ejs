@@ -1,0 +1,16 @@
+<header class="admin-header">
+  <div class="admin-header__brand">
+    <img src="/img/logo-fpt-schools.png" alt="FPT Schools" class="admin-header__logo" />
+    <span>Đồng phục &amp; Thẻ HS 2026-2027</span>
+  </div>
+  <nav class="admin-header__nav">
+    <span class="is-active">Lớp <%= lop %></span>
+  </nav>
+  <div class="admin-header__user">
+    <img src="/img/kien-yeu-thuong.png" alt="Kiến Sáng" class="admin-header__mascot" />
+    <form method="post" action="/admin/logout" style="margin:0">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button class="btn-link" type="submit">Đăng xuất</button>
+    </form>
+  </div>
+</header>

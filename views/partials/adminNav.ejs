@@ -23,6 +23,9 @@
 
     <a href="/admin/danh-muc" class="sidebar__link <%= activeNav === 'categories' ? 'is-active' : '' %>" title="Danh mục"><span class="sidebar__icon">🗂️</span><span class="sidebar__label">Danh mục</span></a>
     <a href="/admin/dot-dang-ky" class="sidebar__link <%= activeNav === 'batches' ? 'is-active' : '' %>" title="Đợt đăng ký"><span class="sidebar__icon">🗓️</span><span class="sidebar__label">Đợt đăng ký</span></a>
+    <% if (session.role === 'admin') { %>
+    <a href="/admin/tai-khoan-lop" class="sidebar__link <%= activeNav === 'class-accounts' ? 'is-active' : '' %>" title="Tài khoản theo lớp"><span class="sidebar__icon">🔑</span><span class="sidebar__label">Tài khoản theo lớp</span></a>
+    <% } %>
   </nav>
 
   <div class="sidebar__mascot">

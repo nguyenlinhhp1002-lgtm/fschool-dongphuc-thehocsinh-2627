@@ -102,6 +102,20 @@
       e.target.form.requestSubmit();
     }
   });
+
+  // Form co class "js-confirm" se hoi xac nhan truoc khi gui (thay cho onsubmit="confirm(...)"
+  // inline - bi CSP script-src-attr chan). Noi dung hoi lay tu data-confirm-message.
+  document.addEventListener(
+    'submit',
+    (e) => {
+      const form = e.target;
+      if (form instanceof HTMLFormElement && form.classList.contains('js-confirm')) {
+        const message = form.dataset.confirmMessage || 'Bạn có chắc chắn?';
+        if (!window.confirm(message)) e.preventDefault();
+      }
+    },
+    true
+  );
 })();
 
 /**
