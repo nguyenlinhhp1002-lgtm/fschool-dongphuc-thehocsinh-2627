@@ -56,13 +56,24 @@ liệu đồng phục/thẻ học sinh không bị ảnh hưởng gì.
 
 ## Bước 4 — Tạo tài khoản đăng nhập đầu tiên trên server thật
 
-Tab **Shell** của service trên Render Dashboard, chạy:
+Gói **Free** của Render **không có tab Shell** (chỉ gói trả phí mới có) nên không chạy được
+`node scripts/admin-users.js` trực tiếp trên server. Thay vào đó, tạo tài khoản đầu tiên qua
+2 biến môi trường:
 
+1. Render Dashboard → service → tab **Environment** → **Add Environment Variable**, thêm:
+   - `INITIAL_ADMIN_USERNAME` = tên đăng nhập muốn dùng (vd `admin`)
+   - `INITIAL_ADMIN_PASSWORD` = mật khẩu muốn dùng
+2. Bấm **Save Changes** — Render tự deploy lại. App sẽ tự tạo tài khoản này **1 lần duy
+   nhất** khi khởi động (nếu bảng tài khoản đang rỗng), an toàn để giữ lại 2 biến này lâu
+   dài — lần khởi động sau sẽ tự bỏ qua vì đã có tài khoản.
+3. Theo dõi **Logs**, thấy dòng `[Khởi tạo] Đã tạo tài khoản admin đầu tiên...` là xong.
+4. (Tuỳ chọn, để gọn) sau khi đăng nhập thành công có thể xoá 2 biến môi trường này —
+   không ảnh hưởng gì vì tài khoản đã được lưu trong database.
+
+Nếu sau này nâng cấp lên gói trả phí (có Shell), vẫn có thể dùng cách cũ:
 ```bash
 node scripts/admin-users.js add <ten-dang-nhap>
 ```
-
-Nhập mật khẩu khi được hỏi (vai trò mặc định là `admin` — toàn quyền).
 
 ## Bước 5 — Kiểm tra
 

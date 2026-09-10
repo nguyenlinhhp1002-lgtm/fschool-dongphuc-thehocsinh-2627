@@ -17,6 +17,27 @@ async function findAdminByUsername(username) {
   return rs.rows[0] || null;
 }
 
+/**
+ * Tao tai khoan admin dau tien tu bien moi truong INITIAL_ADMIN_USERNAME/INITIAL_ADMIN_PASSWORD,
+ * neu ca 2 bien duoc dat VA bang admins dang rong. Danh cho moi truong khong co Shell/CLI de
+ * chay scripts/admin-users.js (vd Render Free). An toan de giu bien moi truong lau dai vi chi
+ * tao 1 lan duy nhat khi chua co tai khoan nao - lan chay sau se tu bo qua.
+ */
+async function bootstrapInitialAdminIfNeeded() {
+  const username = process.env.INITIAL_ADMIN_USERNAME;
+  const password = process.env.INITIAL_ADMIN_PASSWORD;
+  if (!username || !password) return;
+
+  const rs = await db.execute('SELECT COUNT(*) AS c FROM admins');
+  if (Number(rs.rows[0].c) > 0) return;
+
+  await db.execute({
+    sql: 'INSERT INTO admins (username, password_hash, role) VALUES (?, ?, ?)',
+    args: [username, hashPassword(password), 'admin'],
+  });
+  console.log(`[Khởi tạo] Đã tạo tài khoản admin đầu tiên "${username}" từ biến môi trường INITIAL_ADMIN_USERNAME.`);
+}
+
 /** Middleware: yeu cau da dang nhap, neu chua thi chuyen huong ve trang login. */
 function requireAdmin(req, res, next) {
   if (req.session && req.session.adminId) {
@@ -70,6 +91,7 @@ module.exports = {
   hashPassword,
   verifyPassword,
   findAdminByUsername,
+  bootstrapInitialAdminIfNeeded,
   requireAdmin,
   requireFullAdmin,
   ensureCsrfToken,

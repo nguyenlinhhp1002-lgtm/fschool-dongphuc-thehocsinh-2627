@@ -6,6 +6,7 @@ const session = require('express-session');
 const helmet = require('helmet');
 
 const { ensureSchema } = require('./src/db');
+const { bootstrapInitialAdminIfNeeded } = require('./src/auth');
 const adminRoutes = require('./src/routes/admin');
 const publicRoutes = require('./src/routes/public');
 
@@ -77,6 +78,7 @@ app.use((err, req, res, next) => {
 });
 
 ensureSchema()
+  .then(bootstrapInitialAdminIfNeeded)
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Đồng phục & Thẻ học sinh 2026-2027 đang chạy tại http://localhost:${PORT}`);
