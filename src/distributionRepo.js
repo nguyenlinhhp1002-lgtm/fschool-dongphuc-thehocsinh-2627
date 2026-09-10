@@ -10,7 +10,9 @@ async function setSoLuongDaPhat({ maHs, codePrefix, soLuongMoi, nguoiPhat, ghiCh
   if (!current) return { ok: false, message: 'Học sinh chưa đăng ký loại trang phục này.' };
 
   const clamped = Math.max(0, Math.min(soLuongMoi, current.so_luong_dang_ky));
-  if (clamped === current.so_luong_da_phat) return { ok: true, unchanged: true };
+  if (clamped === current.so_luong_da_phat) {
+    return { ok: true, unchanged: true, soLuongDaPhat: clamped, soLuongDangKy: current.so_luong_dang_ky };
+  }
 
   await db.execute({
     sql: `UPDATE student_uniform_summary
@@ -25,7 +27,7 @@ async function setSoLuongDaPhat({ maHs, codePrefix, soLuongMoi, nguoiPhat, ghiCh
     args: [maHs, codePrefix, current.so_luong_da_phat, clamped, nguoiPhat, ghiChu || null],
   });
 
-  return { ok: true, soLuongDaPhat: clamped };
+  return { ok: true, soLuongDaPhat: clamped, soLuongDangKy: current.so_luong_dang_ky };
 }
 
 /** Toggle nhanh: da phat du (= so luong dang ky) hoac chua phat (= 0). */

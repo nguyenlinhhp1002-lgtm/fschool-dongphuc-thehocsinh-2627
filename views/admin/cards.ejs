@@ -105,7 +105,7 @@
               <td><%= r.dot_dang_ky || '' %></td>
               <td>
                 <% if (session.role === 'admin') { %>
-                <form method="post" action="/admin/the-hoc-sinh/cap-nhat">
+                <form method="post" action="/admin/the-hoc-sinh/cap-nhat" class="js-inline-form">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                   <input type="hidden" name="id" value="<%= r.id %>" />
                   <input type="hidden" name="hanhDong" value="toggle_the" />
@@ -117,7 +117,7 @@
               </td>
               <td>
                 <% if (session.role === 'admin') { %>
-                <form method="post" action="/admin/the-hoc-sinh/cap-nhat">
+                <form method="post" action="/admin/the-hoc-sinh/cap-nhat" class="js-inline-form">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                   <input type="hidden" name="id" value="<%= r.id %>" />
                   <input type="hidden" name="hanhDong" value="toggle_day" />
@@ -129,12 +129,12 @@
               </td>
               <td>
                 <% if (session.role === 'admin') { %>
-                <form method="post" action="/admin/the-hoc-sinh/cap-nhat" class="pill-form">
+                <form method="post" action="/admin/the-hoc-sinh/cap-nhat" class="pill-form js-inline-form">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                   <input type="hidden" name="id" value="<%= r.id %>" />
                   <input type="hidden" name="hanhDong" value="set_trang_thai" />
                   <input type="hidden" name="returnTo" value="<%= returnTo %>" />
-                  <select name="giaTri" onchange="this.form.submit()">
+                  <select name="giaTri" class="js-auto-submit">
                     <option value="dang_tien_hanh" <%= r.trang_thai === 'dang_tien_hanh' ? 'selected' : '' %>>Đang tiến hành</option>
                     <option value="da_tra" <%= r.trang_thai === 'da_tra' ? 'selected' : '' %>>Đã trả</option>
                   </select>
@@ -165,5 +165,6 @@
       </table>
     </div>
   </main>
+  <script src="/js/admin.js"></script>
 </body>
 </html>

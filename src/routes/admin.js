@@ -57,6 +57,8 @@ const { buildSimpleXlsx } = require('../exportXlsx');
 const { parseCardExcelBuffer } = require('../cardImport');
 const cardRepo = require('../cardRepo');
 
+const { buildRegistrationRows } = require('../registrationTable');
+
 /** Xay lai query string tu 1 object (bo qua gia tri rong), dung de "quay lai trang cu voi bo loc cu" sau khi POST. */
 function toQueryString(params) {
   const qs = new URLSearchParams();
@@ -504,30 +506,10 @@ router.get(
   '/dang-ky',
   asyncHandler(async (req, res) => {
     const { q = '', lop = '', khoi = '' } = req.query;
-    const [students, categories, summaryGrouped, lopKhoiList] = await Promise.all([
-      summaryRepo.getStudentIdsWithRegistrations({ q, lop, khoi }),
-      categoriesRepo.getActiveCategories(),
-      summaryRepo.getAllSummaryGrouped(),
+    const [{ rows, categories }, lopKhoiList] = await Promise.all([
+      buildRegistrationRows({ q, lop, khoi }),
       studentsRepo.getDistinctLopKhoi(),
     ]);
-
-    const rows = students.map((s) => {
-      const summaryByCode = summaryGrouped.get(s.ma_hs) || new Map();
-      const cells = categories.map((cat) => {
-        const row = summaryByCode.get(cat.code_prefix);
-        const soLuong = row ? row.so_luong_dang_ky : 0;
-        const daPhat = row ? row.so_luong_da_phat : 0;
-        return {
-          codePrefix: cat.code_prefix,
-          coSize: cat.co_size,
-          soLuong,
-          size: row ? row.size : null,
-          daPhat,
-          trangThaiPhat: soLuong === 0 ? null : daPhat === 0 ? 'chua_phat' : daPhat < soLuong ? 'mot_phan' : 'da_phat_du',
-        };
-      });
-      return { student: s, cells };
-    });
 
     res.render('admin/registration-list', {
       ...baseLocals(req),
@@ -547,13 +529,22 @@ router.post(
   verifyCsrfToken,
   asyncHandler(async (req, res) => {
     const { maHs, codePrefix, hanhDong, giaTri, returnTo } = req.body;
+    const isAjax = req.get('X-Requested-With') === 'fetch';
+
     if (hanhDong === 'toggle_phat') {
-      await distributionRepo.toggleFullyDelivered({
+      const result = await distributionRepo.toggleFullyDelivered({
         maHs,
         codePrefix,
         delivered: giaTri === '1',
         nguoiPhat: req.session.username,
       });
+      if (isAjax) {
+        if (!result.ok) return res.status(400).json(result);
+        const soLuong = result.soLuongDangKy;
+        const daPhat = result.soLuongDaPhat;
+        const trangThai = soLuong === 0 ? null : daPhat === 0 ? 'chua_phat' : daPhat < soLuong ? 'mot_phan' : 'da_phat_du';
+        return res.json({ ok: true, trangThai, daPhat, soLuong });
+      }
     } else if (hanhDong === 'set_size') {
       await summaryRepo.upsertSizeAndMaybeQuantity({
         maHs,
@@ -562,6 +553,7 @@ router.post(
         soLuongMoi: null,
         adminUsername: req.session.username,
       });
+      if (isAjax) return res.json({ ok: true });
     }
     res.redirect(returnTo && returnTo.startsWith('/admin/dang-ky') ? returnTo : '/admin/dang-ky');
   })
@@ -924,6 +916,8 @@ router.post(
   verifyCsrfToken,
   asyncHandler(async (req, res) => {
     const { id, hanhDong, giaTri, returnTo } = req.body;
+    const isAjax = req.get('X-Requested-With') === 'fetch';
+
     if (hanhDong === 'toggle_the') {
       await cardRepo.updateCardItem(id, { coThe: giaTri === '1', adminUsername: req.session.username });
     } else if (hanhDong === 'toggle_day') {
@@ -931,6 +925,7 @@ router.post(
     } else if (hanhDong === 'set_trang_thai') {
       await cardRepo.updateCardItem(id, { trangThai: giaTri, adminUsername: req.session.username });
     }
+    if (isAjax) return res.json({ ok: true });
     res.redirect(returnTo && returnTo.startsWith('/admin/the-hoc-sinh') ? returnTo : '/admin/the-hoc-sinh');
   })
 );

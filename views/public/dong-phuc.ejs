@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/publicNav', { activeTab }) %>
+  <main class="admin-main">
+    <h1>Tra cứu đăng ký đồng phục</h1>
+    <p class="admin-main__desc">Danh sách công khai cho giáo viên chủ nhiệm/các bộ phận liên quan xem tình trạng đăng ký &amp; phát đồng phục. Tải lại trang (hoặc bấm "Lọc") để xem trạng thái mới nhất.</p>
+
+    <form method="get" class="form-row">
+      <div class="form-field"><label>Tìm mã HS / tên</label><input type="text" name="q" value="<%= filters.q %>" /></div>
+      <div class="form-field">
+        <label>Lớp</label>
+        <select name="lop">
+          <option value="">Tất cả</option>
+          <% lopKhoiList.forEach(l => { %><option value="<%= l.lop %>" <%= filters.lop === l.lop ? 'selected' : '' %>><%= l.lop %></option><% }) %>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Khối</label>
+        <select name="khoi">
+          <option value="">Tất cả</option>
+          <% [...new Set(lopKhoiList.map(l=>l.khoi))].forEach(k => { %><option value="<%= k %>" <%= filters.khoi === k ? 'selected' : '' %>><%= k %></option><% }) %>
+        </select>
+      </div>
+      <button class="btn btn-outline" type="submit">Lọc</button>
+    </form>
+
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="sticky-col" rowspan="2">Mã HS</th><th rowspan="2">Họ tên</th><th rowspan="2">Lớp</th>
+            <% categories.forEach(c => { %><th colspan="<%= c.co_size ? 3 : 2 %>"><%= c.ten_hien_thi %></th><% }) %>
+          </tr>
+          <tr>
+            <% categories.forEach(c => { %>
+              <th>SL</th><% if (c.co_size) { %><th>Size</th><% } %><th>Trạng thái</th>
+            <% }) %>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(r => { %>
+            <tr>
+              <td class="sticky-col"><%= r.student.ma_hs %></td>
+              <td><%= r.student.ho_ten %></td>
+              <td><%= r.student.lop %></td>
+              <% r.cells.forEach(cell => { %>
+                <% if (cell.soLuong === 0) { %>
+                  <td colspan="<%= cell.coSize ? 3 : 2 %>" style="color:var(--border-soft); text-align:center">–</td>
+                <% } else { %>
+                  <td class="num"><%= cell.soLuong %></td>
+                  <% if (cell.coSize) { %><td><%= cell.size || '—' %></td><% } %>
+                  <td>
+                    <span class="badge <%= cell.trangThaiPhat === 'da_phat_du' ? 'badge--success' : cell.trangThaiPhat === 'mot_phan' ? 'badge--warn' : 'badge--gray' %>">
+                      <%= cell.trangThaiPhat === 'da_phat_du' ? 'Đã phát' : cell.trangThaiPhat === 'mot_phan' ? `${cell.daPhat}/${cell.soLuong}` : 'Chưa phát' %>
+                    </span>
+                  </td>
+                <% } %>
+              <% }) %>
+            </tr>
+          <% }) %>
+          <% if (rows.length === 0) { %>
+            <tr><td colspan="99" style="text-align:center;color:var(--text-muted)">Không có học sinh nào khớp bộ lọc.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px">Tổng <%= rows.length %> học sinh có đăng ký.</p>
+  </main>
+</body>
+</html>

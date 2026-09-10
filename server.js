@@ -7,6 +7,7 @@ const helmet = require('helmet');
 
 const { ensureSchema } = require('./src/db');
 const adminRoutes = require('./src/routes/admin');
+const publicRoutes = require('./src/routes/public');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -63,6 +64,7 @@ app.use(
 
 app.get('/', (req, res) => res.redirect('/admin'));
 app.use('/admin', adminRoutes);
+app.use('/tra-cuu', publicRoutes);
 
 app.use((req, res) => {
   res.status(404).send('Không tìm thấy trang.');

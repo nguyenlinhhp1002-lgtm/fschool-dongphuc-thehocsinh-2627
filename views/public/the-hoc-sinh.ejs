@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/publicNav', { activeTab }) %>
+  <main class="admin-main">
+    <h1>Tra cứu đăng ký thẻ học sinh</h1>
+    <p class="admin-main__desc">Danh sách công khai cho giáo viên chủ nhiệm/các bộ phận liên quan xem tình trạng đăng ký thẻ học sinh &amp; bộ dây bao thẻ. Tải lại trang (hoặc bấm "Lọc") để xem trạng thái mới nhất.</p>
+
+    <form method="get" class="form-row">
+      <div class="form-field"><label>Tìm mã HS / tên</label><input type="text" name="q" value="<%= filters.q %>" /></div>
+      <div class="form-field">
+        <label>Lớp</label>
+        <select name="lop"><option value="">Tất cả</option><% lopKhoiList.forEach(l => { %><option value="<%= l.lop %>" <%= filters.lop===l.lop?'selected':'' %>><%= l.lop %></option><% }) %></select>
+      </div>
+      <div class="form-field">
+        <label>Khối</label>
+        <select name="khoi"><option value="">Tất cả</option><% [...new Set(lopKhoiList.map(l=>l.khoi))].forEach(k => { %><option value="<%= k %>" <%= filters.khoi===k?'selected':'' %>><%= k %></option><% }) %></select>
+      </div>
+      <div class="form-field">
+        <label>Trạng thái</label>
+        <select name="trangThai">
+          <option value="">Tất cả</option>
+          <option value="dang_tien_hanh" <%= filters.trangThai==='dang_tien_hanh'?'selected':'' %>>Đang tiến hành</option>
+          <option value="da_tra" <%= filters.trangThai==='da_tra'?'selected':'' %>>Đã trả</option>
+        </select>
+      </div>
+      <button class="btn btn-outline" type="submit">Lọc</button>
+    </form>
+
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã HS</th><th>Họ tên</th><th>Lớp</th><th>Ngày đăng ký</th><th>Đợt đăng ký</th>
+            <th>Thẻ học sinh</th><th>Bộ dây bao thẻ</th><th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% result.rows.forEach(r => { %>
+            <tr>
+              <td><%= r.ma_hs %></td>
+              <td><%= r.ho_ten || '—' %></td>
+              <td><%= r.lop || '' %></td>
+              <td><%= r.ngay_dang_ky || '' %></td>
+              <td><%= r.dot_dang_ky || '' %></td>
+              <td><span class="badge <%= r.co_the ? 'badge--success' : 'badge--gray' %>"><%= r.co_the ? 'Có' : 'Không' %></span></td>
+              <td><span class="badge <%= r.co_day ? 'badge--success' : 'badge--gray' %>"><%= r.co_day ? 'Có' : 'Không' %></span></td>
+              <td><span class="badge <%= r.trang_thai === 'da_tra' ? 'badge--success' : 'badge--warn' %>"><%= r.trang_thai === 'da_tra' ? 'Đã trả' : 'Đang tiến hành' %></span></td>
+            </tr>
+          <% }) %>
+          <% if (result.rows.length === 0) { %>
+            <tr><td colspan="8" style="text-align:center;color:var(--text-muted)">Không có dòng nào khớp bộ lọc.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px">Tổng <%= result.total %> dòng.</p>
+  </main>
+</body>
+</html>

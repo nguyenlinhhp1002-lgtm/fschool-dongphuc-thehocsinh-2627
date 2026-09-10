@@ -77,7 +77,7 @@
                   <% if (cell.coSize) { %>
                     <td>
                       <% if (session.role === 'admin') { %>
-                      <form method="post" action="/admin/dang-ky/cap-nhat" class="pill-form">
+                      <form method="post" action="/admin/dang-ky/cap-nhat" class="pill-form js-inline-form">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                         <input type="hidden" name="maHs" value="<%= r.student.ma_hs %>" />
                         <input type="hidden" name="codePrefix" value="<%= cell.codePrefix %>" />
@@ -91,7 +91,7 @@
                   <% } %>
                   <td>
                     <% if (session.role === 'admin') { %>
-                    <form method="post" action="/admin/dang-ky/cap-nhat">
+                    <form method="post" action="/admin/dang-ky/cap-nhat" class="js-inline-form">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                       <input type="hidden" name="maHs" value="<%= r.student.ma_hs %>" />
                       <input type="hidden" name="codePrefix" value="<%= cell.codePrefix %>" />
@@ -118,5 +118,6 @@
     </div>
     <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px">Tổng <%= rows.length %> học sinh có đăng ký.</p>
   </main>
+  <script src="/js/admin.js"></script>
 </body>
 </html>
