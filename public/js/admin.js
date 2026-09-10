@@ -103,3 +103,32 @@
     }
   });
 })();
+
+/**
+ * Thu gon/mo rong thanh menu ben trai, nho trang thai qua cac trang (localStorage) de
+ * khong bi mo rong lai moi lan chuyen trang. Dat script ngay sau <aside id="sidebar"> trong
+ * adminNav.ejs nen luc script nay chay, sidebar da co san trong DOM (khong can doi DOMContentLoaded),
+ * giup ap dung trang thai thu gon truoc khi phan noi dung con lai cua trang duoc ve ra.
+ */
+(function () {
+  const sidebar = document.getElementById('sidebar');
+  const toggleBtn = document.getElementById('sidebarToggle');
+  if (!sidebar || !toggleBtn) return;
+
+  try {
+    if (localStorage.getItem('sidebarCollapsed') === '1') {
+      sidebar.classList.add('is-collapsed');
+    }
+  } catch (err) {
+    /* localStorage khong dung duoc (che do rieng tu...) - bo qua, mac dinh mo rong. */
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    const collapsed = sidebar.classList.toggle('is-collapsed');
+    try {
+      localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+    } catch (err) {
+      /* bo qua neu khong luu duoc */
+    }
+  });
+})();

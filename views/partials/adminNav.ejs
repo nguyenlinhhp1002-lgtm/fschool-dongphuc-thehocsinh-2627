@@ -1,26 +1,28 @@
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
+  <button type="button" class="sidebar__toggle" id="sidebarToggle" title="Thu gọn/mở rộng thanh menu">‹</button>
+
   <a href="/admin" class="sidebar__brand">
     <img src="/img/logo-fpt-schools.png" alt="FPT Schools" class="sidebar__logo" />
     <div class="sidebar__brand-title">Đồng phục &amp; Thẻ HS<br />2026-2027</div>
   </a>
 
   <nav class="sidebar__nav">
-    <a href="/admin" class="sidebar__link <%= activeNav === 'dashboard' ? 'is-active' : '' %>"><span class="sidebar__icon">🏠</span> Tổng quan</a>
-    <a href="/admin/hoc-sinh" class="sidebar__link <%= activeNav === 'students' ? 'is-active' : '' %>"><span class="sidebar__icon">🎓</span> Học sinh</a>
-    <a href="/admin/dang-ky" class="sidebar__link <%= activeNav === 'registration-list' ? 'is-active' : '' %>"><span class="sidebar__icon">👕</span> Đăng ký &amp; phát đồ</a>
-    <a href="/admin/dang-ky/upload" class="sidebar__link <%= activeNav === 'registration-upload' ? 'is-active' : '' %>"><span class="sidebar__icon">📥</span> Tải file đăng ký</a>
-    <a href="/admin/dang-ky/loi" class="sidebar__link <%= activeNav === 'registration-issues' ? 'is-active' : '' %>"><span class="sidebar__icon">⚠️</span> Cần xử lý</a>
-    <a href="/admin/ds-no" class="sidebar__link <%= activeNav === 'ds-no' ? 'is-active' : '' %>"><span class="sidebar__icon">📋</span> File DS đăng ký có size</a>
-    <a href="/admin/the-hoc-sinh" class="sidebar__link <%= activeNav === 'cards' ? 'is-active' : '' %>"><span class="sidebar__icon">🪪</span> Thẻ học sinh</a>
+    <a href="/admin" class="sidebar__link <%= activeNav === 'dashboard' ? 'is-active' : '' %>" title="Tổng quan"><span class="sidebar__icon">🏠</span><span class="sidebar__label">Tổng quan</span></a>
+    <a href="/admin/hoc-sinh" class="sidebar__link <%= activeNav === 'students' ? 'is-active' : '' %>" title="Học sinh"><span class="sidebar__icon">🎓</span><span class="sidebar__label">Học sinh</span></a>
+    <a href="/admin/dang-ky" class="sidebar__link <%= activeNav === 'registration-list' ? 'is-active' : '' %>" title="Đăng ký &amp; phát đồ"><span class="sidebar__icon">👕</span><span class="sidebar__label">Đăng ký &amp; phát đồ</span></a>
+    <a href="/admin/dang-ky/upload" class="sidebar__link <%= activeNav === 'registration-upload' ? 'is-active' : '' %>" title="Tải file đăng ký"><span class="sidebar__icon">📥</span><span class="sidebar__label">Tải file đăng ký</span></a>
+    <a href="/admin/dang-ky/loi" class="sidebar__link <%= activeNav === 'registration-issues' ? 'is-active' : '' %>" title="Cần xử lý"><span class="sidebar__icon">⚠️</span><span class="sidebar__label">Cần xử lý</span></a>
+    <a href="/admin/ds-no" class="sidebar__link <%= activeNav === 'ds-no' ? 'is-active' : '' %>" title="File DS đăng ký có size"><span class="sidebar__icon">📋</span><span class="sidebar__label">File DS đăng ký có size</span></a>
+    <a href="/admin/the-hoc-sinh" class="sidebar__link <%= activeNav === 'cards' ? 'is-active' : '' %>" title="Thẻ học sinh"><span class="sidebar__icon">🪪</span><span class="sidebar__label">Thẻ học sinh</span></a>
 
     <div class="sidebar__group">
-      <div class="sidebar__group-label"><span class="sidebar__icon">📊</span> Báo cáo</div>
-      <a href="/admin/bao-cao" class="sidebar__link sidebar__link--sub <%= activeNav === 'reports' ? 'is-active' : '' %>"><span class="sidebar__icon">👕</span> Báo cáo đồng phục</a>
-      <a href="/admin/bao-cao-the" class="sidebar__link sidebar__link--sub <%= activeNav === 'reports-cards' ? 'is-active' : '' %>"><span class="sidebar__icon">🪪</span> Báo cáo thẻ học sinh</a>
+      <div class="sidebar__group-label" title="Báo cáo"><span class="sidebar__icon">📊</span><span class="sidebar__label">Báo cáo</span></div>
+      <a href="/admin/bao-cao" class="sidebar__link sidebar__link--sub <%= activeNav === 'reports' ? 'is-active' : '' %>" title="Báo cáo đồng phục"><span class="sidebar__icon">👕</span><span class="sidebar__label">Báo cáo đồng phục</span></a>
+      <a href="/admin/bao-cao-the" class="sidebar__link sidebar__link--sub <%= activeNav === 'reports-cards' ? 'is-active' : '' %>" title="Báo cáo thẻ học sinh"><span class="sidebar__icon">🪪</span><span class="sidebar__label">Báo cáo thẻ học sinh</span></a>
     </div>
 
-    <a href="/admin/danh-muc" class="sidebar__link <%= activeNav === 'categories' ? 'is-active' : '' %>"><span class="sidebar__icon">🗂️</span> Danh mục</a>
-    <a href="/admin/dot-dang-ky" class="sidebar__link <%= activeNav === 'batches' ? 'is-active' : '' %>"><span class="sidebar__icon">🗓️</span> Đợt đăng ký</a>
+    <a href="/admin/danh-muc" class="sidebar__link <%= activeNav === 'categories' ? 'is-active' : '' %>" title="Danh mục"><span class="sidebar__icon">🗂️</span><span class="sidebar__label">Danh mục</span></a>
+    <a href="/admin/dot-dang-ky" class="sidebar__link <%= activeNav === 'batches' ? 'is-active' : '' %>" title="Đợt đăng ký"><span class="sidebar__icon">🗓️</span><span class="sidebar__label">Đợt đăng ký</span></a>
   </nav>
 
   <div class="sidebar__mascot">
@@ -28,9 +30,10 @@
   </div>
 
   <div class="sidebar__user">
-    <span><%= session.username.charAt(0).toUpperCase() + session.username.slice(1) %></span>
+    <span class="sidebar__label"><%= session.username.charAt(0).toUpperCase() + session.username.slice(1) %></span>
     <form action="/admin/logout" method="post" style="margin:0">
-      <button class="btn-link" type="submit">Đăng xuất</button>
+      <button class="btn-link" type="submit" title="Đăng xuất"><span class="sidebar__label">Đăng xuất</span><span class="sidebar__icon-only">⏻</span></button>
     </form>
   </div>
 </aside>
+<script src="/js/admin.js"></script>
