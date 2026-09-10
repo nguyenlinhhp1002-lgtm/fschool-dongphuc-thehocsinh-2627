@@ -141,6 +141,11 @@ input, select, textarea {
 .alert--warn { background: var(--warn-bg); color: var(--warn); }
 .alert ul { margin: 4px 0 0; padding-left: 18px; }
 
+/* ================= Public (khong dang nhap) shell - header tren, khong sidebar ================= */
+.public-page {
+  min-height: 100vh;
+}
+
 /* ================= Admin shell ================= */
 
 .admin-page {
