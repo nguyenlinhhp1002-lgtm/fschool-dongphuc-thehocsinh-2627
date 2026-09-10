@@ -21,6 +21,48 @@ async function getCategoryByCode(codePrefix) {
   return rs.rows[0] || null;
 }
 
+async function getAllSizeGroups() {
+  const rs = await db.execute('SELECT * FROM size_groups ORDER BY thu_tu, code');
+  return rs.rows;
+}
+
+async function getSizeGroupsMap() {
+  const groups = await getAllSizeGroups();
+  return new Map(groups.map((g) => [g.code, g]));
+}
+
+/**
+ * Sap xep thu tu cot khi xuat/nhap "DS đăng ký có size": cac danh muc LIEN TIEP cung 1
+ * size_group_code duoc gom lai, dung 1 cot size chung (dat truoc hoac sau khoi cot SL cua
+ * nhom, theo size_groups.vi_tri); danh muc khong thuoc nhom nao van hien thi cot SL + cot
+ * Size rieng nhu truoc. `categories` phai da sap theo thu_tu.
+ * Tra ve mang { kind: 'sl'|'size'|'group_size', category?, group? }.
+ */
+function buildExportColumnPlan(categories, sizeGroupsMap) {
+  const plan = [];
+  let i = 0;
+  while (i < categories.length) {
+    const cat = categories[i];
+    const group = cat.size_group_code ? sizeGroupsMap.get(cat.size_group_code) : null;
+
+    if (group) {
+      const members = [];
+      while (i < categories.length && categories[i].size_group_code === group.code) {
+        members.push(categories[i]);
+        i += 1;
+      }
+      if (group.vi_tri === 'truoc') plan.push({ kind: 'group_size', group });
+      members.forEach((m) => plan.push({ kind: 'sl', category: m }));
+      if (group.vi_tri === 'sau') plan.push({ kind: 'group_size', group });
+    } else {
+      plan.push({ kind: 'sl', category: cat });
+      if (cat.co_size) plan.push({ kind: 'size', category: cat });
+      i += 1;
+    }
+  }
+  return plan;
+}
+
 /**
  * Doi chieu 1 chuoi "Mon" (da bo hau to -Size:...) sang 1 loai trang phuc.
  * 1) Khop chinh xac (sau chuan hoa) voi alias da khai bao.
@@ -83,11 +125,11 @@ async function buildMonMatcher() {
   };
 }
 
-async function createCategory({ codePrefix, tenHienThi, cotSl, cotSize, coSize, thuTu, aliases }) {
+async function createCategory({ codePrefix, tenHienThi, cotSl, cotSize, coSize, thuTu, sizeGroupCode, aliases }) {
   await db.execute({
-    sql: `INSERT INTO uniform_categories (code_prefix, ten_hien_thi, cot_sl, cot_size, co_size, thu_tu, active)
-          VALUES (?, ?, ?, ?, ?, ?, 1)`,
-    args: [codePrefix, tenHienThi, cotSl, coSize ? cotSize : null, coSize ? 1 : 0, thuTu || 99],
+    sql: `INSERT INTO uniform_categories (code_prefix, ten_hien_thi, cot_sl, cot_size, co_size, thu_tu, active, size_group_code)
+          VALUES (?, ?, ?, ?, ?, ?, 1, ?)`,
+    args: [codePrefix, tenHienThi, cotSl, coSize ? cotSize : null, coSize ? 1 : 0, thuTu || 99, sizeGroupCode || null],
   });
   for (const alias of aliases || []) {
     if (!alias.trim()) continue;
@@ -98,12 +140,12 @@ async function createCategory({ codePrefix, tenHienThi, cotSl, cotSize, coSize, 
   }
 }
 
-async function updateCategory(codePrefix, { tenHienThi, cotSl, cotSize, coSize, thuTu, active }) {
+async function updateCategory(codePrefix, { tenHienThi, cotSl, cotSize, coSize, thuTu, active, sizeGroupCode }) {
   await db.execute({
     sql: `UPDATE uniform_categories
-          SET ten_hien_thi = ?, cot_sl = ?, cot_size = ?, co_size = ?, thu_tu = ?, active = ?
+          SET ten_hien_thi = ?, cot_sl = ?, cot_size = ?, co_size = ?, thu_tu = ?, active = ?, size_group_code = ?
           WHERE code_prefix = ?`,
-    args: [tenHienThi, cotSl, coSize ? cotSize : null, coSize ? 1 : 0, thuTu, active ? 1 : 0, codePrefix],
+    args: [tenHienThi, cotSl, coSize ? cotSize : null, coSize ? 1 : 0, thuTu, active ? 1 : 0, sizeGroupCode || null, codePrefix],
   });
 }
 
@@ -128,6 +170,9 @@ module.exports = {
   getAllCategories,
   getActiveCategories,
   getCategoryByCode,
+  getAllSizeGroups,
+  getSizeGroupsMap,
+  buildExportColumnPlan,
   matchMonToCategory,
   buildMonMatcher,
   createCategory,

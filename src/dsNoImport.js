@@ -1,7 +1,7 @@
 const ExcelJS = require('exceljs');
 const { db } = require('./db');
-const { ExcelValidationError, cellToString, cellToNumber, readHeaderRow } = require('./excelHelpers');
-const { getActiveCategories } = require('./categoriesRepo');
+const { ExcelValidationError, cellToString, cellToNumber, readHeaderRowTrimmed } = require('./excelHelpers');
+const { getActiveCategories, getSizeGroupsMap } = require('./categoriesRepo');
 const { getAllSummaryGrouped, getAllMeasurementsMap } = require('./summaryRepo');
 
 const COT_CO_BAN = {
@@ -19,7 +19,7 @@ const COT_CO_BAN = {
  * trang phuc dang active. Tra ve danh sach dong tho + vi tri cac cot tim thay.
  */
 async function parseDsNoExcelBuffer(buffer) {
-  const categories = await getActiveCategories();
+  const [categories, sizeGroupsMap] = await Promise.all([getActiveCategories(), getSizeGroupsMap()]);
 
   const workbook = new ExcelJS.Workbook();
   try {
@@ -33,7 +33,7 @@ async function parseDsNoExcelBuffer(buffer) {
     throw new ExcelValidationError(['File Excel không có sheet dữ liệu nào.']);
   }
 
-  const headerRow = readHeaderRow(sheet);
+  const headerRow = readHeaderRowTrimmed(sheet);
   if (!headerRow.includes(COT_CO_BAN.maHs)) {
     throw new ExcelValidationError([`File thiếu cột bắt buộc: "${COT_CO_BAN.maHs}".`]);
   }
@@ -44,12 +44,18 @@ async function parseDsNoExcelBuffer(buffer) {
     if (i >= 0) idx[key] = i;
   });
 
-  const catCols = categories.map((cat) => ({
-    codePrefix: cat.code_prefix,
-    coSize: cat.co_size,
-    slIdx: headerRow.indexOf(cat.cot_sl),
-    sizeIdx: cat.co_size ? headerRow.indexOf(cat.cot_size) : -1,
-  }));
+  // Danh muc thuoc 1 size_group dung chung cot size cua nhom (vd "Size chung"); danh muc
+  // khong thuoc nhom nao dung cot size rieng cua no nhu truoc.
+  const catCols = categories.map((cat) => {
+    const group = cat.size_group_code ? sizeGroupsMap.get(cat.size_group_code) : null;
+    const sizeColName = group ? group.cot_size : cat.cot_size;
+    return {
+      codePrefix: cat.code_prefix,
+      coSize: cat.co_size,
+      slIdx: headerRow.indexOf(cat.cot_sl),
+      sizeIdx: cat.co_size && sizeColName ? headerRow.indexOf(sizeColName) : -1,
+    };
+  });
 
   const rows = [];
   for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber += 1) {

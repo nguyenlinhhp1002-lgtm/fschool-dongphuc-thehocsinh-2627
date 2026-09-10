@@ -256,12 +256,13 @@ router.post(
 router.get(
   '/danh-muc',
   asyncHandler(async (req, res) => {
-    const categories = await categoriesRepo.getAllCategories();
+    const [categories, sizeGroups] = await Promise.all([categoriesRepo.getAllCategories(), categoriesRepo.getAllSizeGroups()]);
     res.render('admin/categories', {
       ...baseLocals(req),
       pageTitle: 'Danh mục loại trang phục',
       activeNav: 'categories',
       categories,
+      sizeGroups,
     });
   })
 );
@@ -271,7 +272,7 @@ router.post(
   requireFullAdmin,
   verifyCsrfToken,
   asyncHandler(async (req, res) => {
-    const { codePrefix, tenHienThi, cotSl, cotSize, thuTu, aliases } = req.body;
+    const { codePrefix, tenHienThi, cotSl, cotSize, thuTu, aliases, sizeGroupCode } = req.body;
     const coSize = req.body.coSize === '1';
     await categoriesRepo.createCategory({
       codePrefix: String(codePrefix || '').trim().toUpperCase(),
@@ -280,6 +281,7 @@ router.post(
       cotSize: String(cotSize || '').trim(),
       coSize,
       thuTu: Number(thuTu) || 99,
+      sizeGroupCode: String(sizeGroupCode || '').trim() || null,
       aliases: String(aliases || '').split(/[,\n]/).map((a) => a.trim()).filter(Boolean),
     });
     res.redirect('/admin/danh-muc');
@@ -291,7 +293,7 @@ router.post(
   requireFullAdmin,
   verifyCsrfToken,
   asyncHandler(async (req, res) => {
-    const { tenHienThi, cotSl, cotSize, thuTu } = req.body;
+    const { tenHienThi, cotSl, cotSize, thuTu, sizeGroupCode } = req.body;
     const coSize = req.body.coSize === '1';
     const active = req.body.active === '1';
     await categoriesRepo.updateCategory(req.params.code, {
@@ -301,6 +303,7 @@ router.post(
       coSize,
       thuTu: Number(thuTu) || 99,
       active,
+      sizeGroupCode: String(sizeGroupCode || '').trim() || null,
     });
     res.redirect('/admin/danh-muc');
   })

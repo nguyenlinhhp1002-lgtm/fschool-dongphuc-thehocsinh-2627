@@ -5,7 +5,7 @@
   <%- include('../partials/adminNav', { session, activeNav }) %>
   <main class="admin-main">
     <h1>Danh mục loại trang phục</h1>
-    <p class="admin-main__desc">Quy định tên các loại trang phục, tên cột khi xuất file "DS đăng ký có size", và các tên gọi ("Món") trong file đăng ký được nhận diện là loại này.</p>
+    <p class="admin-main__desc">Quy định tên các loại trang phục, tên cột khi xuất file "DS đăng ký có size", và các tên gọi ("Món") trong file đăng ký được nhận diện là loại này. "Nhóm size" (nếu có) là các loại trang phục dùng chung 1 cột size khi xuất/nhập (vd "Size chung" dùng cho Áo polo/Quần sooc/Áo khoác/Thể thao) — sửa size ở loại nào trong nhóm cũng tự áp dụng cho cả nhóm.</p>
 
     <% categories.forEach(cat => { %>
       <div class="card">
@@ -15,7 +15,14 @@
             <div class="form-field"><label>Mã (<%= cat.code_prefix %>)</label><input type="text" value="<%= cat.code_prefix %>" disabled /></div>
             <div class="form-field"><label>Tên hiển thị</label><input type="text" name="tenHienThi" value="<%= cat.ten_hien_thi %>" <%= session.role !== 'admin' ? 'disabled' : '' %> required /></div>
             <div class="form-field"><label>Cột "SL" khi xuất DS đăng ký có size</label><input type="text" name="cotSl" value="<%= cat.cot_sl %>" <%= session.role !== 'admin' ? 'disabled' : '' %> required /></div>
-            <div class="form-field"><label>Cột "Size" khi xuất DS đăng ký có size</label><input type="text" name="cotSize" value="<%= cat.cot_size || '' %>" <%= session.role !== 'admin' ? 'disabled' : '' %> /></div>
+            <div class="form-field"><label>Cột "Size" riêng (nếu không thuộc nhóm)</label><input type="text" name="cotSize" value="<%= cat.cot_size || '' %>" <%= session.role !== 'admin' ? 'disabled' : '' %> /></div>
+            <div class="form-field">
+              <label>Nhóm size</label>
+              <select name="sizeGroupCode" <%= session.role !== 'admin' ? 'disabled' : '' %>>
+                <option value="">— Không thuộc nhóm (dùng cột riêng) —</option>
+                <% sizeGroups.forEach(g => { %><option value="<%= g.code %>" <%= cat.size_group_code === g.code ? 'selected' : '' %>><%= g.ten_hien_thi %></option><% }) %>
+              </select>
+            </div>
             <div class="form-field"><label>Thứ tự</label><input type="number" name="thuTu" value="<%= cat.thu_tu %>" style="min-width:70px" <%= session.role !== 'admin' ? 'disabled' : '' %> /></div>
             <div class="form-field form-field--checkbox"><input type="checkbox" name="coSize" value="1" <%= cat.co_size ? 'checked' : '' %> <%= session.role !== 'admin' ? 'disabled' : '' %> /><label>Có size</label></div>
             <div class="form-field form-field--checkbox"><input type="checkbox" name="active" value="1" <%= cat.active ? 'checked' : '' %> <%= session.role !== 'admin' ? 'disabled' : '' %> /><label>Đang dùng</label></div>
@@ -54,7 +61,14 @@
           <div class="form-field"><label>Mã (2 chữ cái)</label><input type="text" name="codePrefix" maxlength="4" required style="min-width:80px" /></div>
           <div class="form-field"><label>Tên hiển thị</label><input type="text" name="tenHienThi" required /></div>
           <div class="form-field"><label>Cột "SL" khi xuất</label><input type="text" name="cotSl" required /></div>
-          <div class="form-field"><label>Cột "Size" khi xuất</label><input type="text" name="cotSize" /></div>
+          <div class="form-field"><label>Cột "Size" riêng (nếu không thuộc nhóm)</label><input type="text" name="cotSize" /></div>
+          <div class="form-field">
+            <label>Nhóm size</label>
+            <select name="sizeGroupCode">
+              <option value="">— Không thuộc nhóm (dùng cột riêng) —</option>
+              <% sizeGroups.forEach(g => { %><option value="<%= g.code %>"><%= g.ten_hien_thi %></option><% }) %>
+            </select>
+          </div>
           <div class="form-field"><label>Thứ tự</label><input type="number" name="thuTu" value="99" style="min-width:70px" /></div>
           <div class="form-field form-field--checkbox"><input type="checkbox" name="coSize" value="1" checked /><label>Có size</label></div>
         </div>

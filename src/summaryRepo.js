@@ -83,6 +83,8 @@ async function upsertSizeAndMaybeQuantity({ maHs, codePrefix, size, soLuongMoi, 
     args: [maHs, codePrefix, finalSoLuong, size, finalSoLuong, size],
   });
 
+  await mirrorSizeToGroupSiblings({ maHs, codePrefix, size });
+
   if (existing && finalSoLuong !== soLuongCu) {
     await db.execute({
       sql: `INSERT INTO audit_log (bang, khoa_chinh, truong, gia_tri_cu, gia_tri_moi, nguoi_sua)
@@ -92,6 +94,28 @@ async function upsertSizeAndMaybeQuantity({ maHs, codePrefix, size, soLuongMoi, 
     return true;
   }
   return false;
+}
+
+/**
+ * Neu loai trang phuc nay thuoc 1 size_group (vd "Size chung" dung cho Ao polo/Quan sooc/
+ * Ao khoac/The thao), dong bo lai size vua luu sang cac loai khac CUNG NHOM cua hoc sinh nay
+ * (chi cap nhat dong da co san - hoc sinh chua dang ky loai do thi khong tao dong moi).
+ */
+async function mirrorSizeToGroupSiblings({ maHs, codePrefix, size }) {
+  const catRs = await db.execute({ sql: 'SELECT size_group_code FROM uniform_categories WHERE code_prefix = ?', args: [codePrefix] });
+  const groupCode = catRs.rows[0] && catRs.rows[0].size_group_code;
+  if (!groupCode) return;
+
+  const siblingsRs = await db.execute({
+    sql: 'SELECT code_prefix FROM uniform_categories WHERE size_group_code = ? AND code_prefix != ?',
+    args: [groupCode, codePrefix],
+  });
+  for (const sib of siblingsRs.rows) {
+    await db.execute({
+      sql: `UPDATE student_uniform_summary SET size = ?, updated_at = datetime('now') WHERE ma_hs = ? AND code_prefix = ?`,
+      args: [size, maHs, sib.code_prefix],
+    });
+  }
 }
 
 async function upsertMeasurements({ maHs, chieuCao, canNang, vongBung, daiChan, gioiTinh, ghiChu, adminUsername }) {
