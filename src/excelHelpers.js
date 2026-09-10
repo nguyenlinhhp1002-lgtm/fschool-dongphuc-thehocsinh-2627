@@ -53,14 +53,24 @@ function normalizeText(text) {
 }
 
 /**
- * Tim vi tri 1 cot trong hang header theo ten, so khop qua normalizeText() (khong phan biet
- * hoa/thuong, khoang trang thua, dang Unicode) thay vi so sanh chuoi tuyet doi - tranh bo sot
- * cot chi vi khac 1 khoang trang/hoa-thuong/dang encode ma mat thuong khong thay duoc.
- * Tra ve -1 neu khong tim thay.
+ * Chuan hoa rieng cho TEN COT (khac normalizeText dung chung): bo LUON moi khoang trang thay
+ * vi chi gom lai, vi ten cot la 1 nhan/dinh danh ngan (khong phai cau van can giu tu cach de
+ * doc), nen "Size Quần váy/Chân váy" va "Size Quần váy / Chân váy" (co dau cach quanh dau "/"
+ * do go tay) phai duoc coi la CUNG 1 cot.
+ */
+function normalizeColumnName(text) {
+  return normalizeText(text).replace(/\s+/g, '');
+}
+
+/**
+ * Tim vi tri 1 cot trong hang header theo ten, so khop qua normalizeColumnName() (khong phan
+ * biet hoa/thuong, khoang trang du/thieu quanh dau cau, dang Unicode) thay vi so sanh chuoi
+ * tuyet doi - tranh bo sot cot chi vi khac 1 khoang trang/hoa-thuong/dang encode ma mat thuong
+ * khong thay duoc. Tra ve -1 neu khong tim thay.
  */
 function findColumnIndex(headerRow, expectedName) {
-  const target = normalizeText(expectedName);
-  return headerRow.findIndex((h) => normalizeText(h) === target);
+  const target = normalizeColumnName(expectedName);
+  return headerRow.findIndex((h) => normalizeColumnName(h) === target);
 }
 
 /** Ngay dang dd/mm/yyyy (chuoi) -> Date, hoac null neu khong parse duoc. */
@@ -113,6 +123,7 @@ module.exports = {
   cellToString,
   cellToNumber,
   normalizeText,
+  normalizeColumnName,
   parseDateVN,
   formatDateVN,
   readHeaderRow,
