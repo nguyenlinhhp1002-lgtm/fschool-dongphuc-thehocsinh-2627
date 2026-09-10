@@ -163,10 +163,29 @@ async function getCardStats() {
   };
 }
 
+/** Thong ke dang ky the theo lop hoac khoi: tong luot, da tra, dang tien hanh, tong co day. */
+async function getProgressByGroup(groupBy) {
+  const col = groupBy === 'khoi' ? 's.khoi' : 's.lop';
+  const rs = await db.execute(`
+    SELECT ${col} AS nhom,
+           COUNT(*) AS tong_luot,
+           SUM(CASE WHEN ci.trang_thai = 'da_tra' THEN 1 ELSE 0 END) AS da_tra,
+           SUM(CASE WHEN ci.trang_thai = 'dang_tien_hanh' THEN 1 ELSE 0 END) AS dang_tien_hanh,
+           SUM(ci.co_day) AS tong_day
+    FROM card_registration_items ci
+    JOIN students s ON s.ma_hs = ci.ma_hs
+    WHERE ${col} IS NOT NULL
+    GROUP BY ${col}
+    ORDER BY ${col}
+  `);
+  return rs.rows;
+}
+
 module.exports = {
   resolveCardRows,
   commitCardImport,
   getCardUploadHistory,
+  getProgressByGroup,
   searchCardItems,
   updateCardItem,
   getCardStats,

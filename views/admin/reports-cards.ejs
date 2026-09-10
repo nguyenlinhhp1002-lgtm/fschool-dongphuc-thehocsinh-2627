@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>🪪 Báo cáo thẻ học sinh</h1>
+
+    <div class="stat-cards">
+      <div class="stat-card"><div class="stat-card__label">Học sinh đã đăng ký</div><div class="stat-card__value"><%= stats.tongHocSinh %></div></div>
+      <div class="stat-card"><div class="stat-card__label">Tổng lượt đăng ký/cấp lại</div><div class="stat-card__value"><%= stats.tongDong %></div></div>
+      <div class="stat-card"><div class="stat-card__label">Đã trả / Đang tiến hành</div><div class="stat-card__value"><%= stats.daTra %> / <%= stats.dangTienHanh %></div>
+        <div class="progress-bar" style="margin-top:8px"><div class="progress-bar__fill" style="width: <%= stats.tongDong > 0 ? Math.round(stats.daTra / stats.tongDong * 100) : 0 %>%"></div></div>
+        <div class="stat-card__sub"><%= stats.tongDong > 0 ? Math.round(stats.daTra / stats.tongDong * 100) : 0 %>% đã trả</div>
+      </div>
+      <div class="stat-card"><div class="stat-card__label">Có đăng ký bộ dây bao thẻ</div><div class="stat-card__value"><%= stats.tongDay %></div></div>
+    </div>
+
+    <h2>Theo nhóm</h2>
+    <div class="tabs">
+      <a href="?nhom=lop" class="<%= groupBy === 'lop' ? 'is-active' : '' %>">Theo lớp</a>
+      <a href="?nhom=khoi" class="<%= groupBy === 'khoi' ? 'is-active' : '' %>">Theo khối</a>
+      <a class="btn-link" style="color:var(--navy-800);border-color:var(--navy-800)" href="/admin/bao-cao-the/xuat.xlsx?nhom=<%= groupBy %>">⭳ Xuất Excel</a>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Nhóm</th><th>Tổng lượt</th><th>Đã trả</th><th>Đang tiến hành</th><th>Có dây</th><th>Tỷ lệ đã trả</th></tr></thead>
+        <tbody>
+          <% progressByGroup.forEach(r => { %>
+            <tr>
+              <td><%= r.nhom %></td>
+              <td class="num"><%= r.tong_luot %></td>
+              <td class="num"><%= r.da_tra %></td>
+              <td class="num"><%= r.dang_tien_hanh %></td>
+              <td class="num"><%= r.tong_day %></td>
+              <td style="min-width:120px">
+                <div class="progress-bar"><div class="progress-bar__fill" style="width: <%= r.tong_luot > 0 ? Math.round(r.da_tra / r.tong_luot * 100) : 0 %>%"></div></div>
+                <span style="font-size:0.75rem;color:var(--text-muted)"><%= r.tong_luot > 0 ? Math.round(r.da_tra / r.tong_luot * 100) : 0 %>%</span>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (progressByGroup.length === 0) { %>
+            <tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có dữ liệu.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:16px"><a href="/admin/the-hoc-sinh">Xem danh sách chi tiết &amp; cập nhật trạng thái →</a></p>
+  </main>
+</body>
+</html>

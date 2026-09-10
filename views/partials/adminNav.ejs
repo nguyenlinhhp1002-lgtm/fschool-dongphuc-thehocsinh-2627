@@ -1,24 +1,36 @@
-<header class="admin-header">
-  <div class="admin-header__brand">
-    <span class="admin-header__brand-badge">ĐP</span>
-    <span>Đồng phục &amp; Thẻ HS 2026-2027</span>
-  </div>
-  <nav class="admin-header__nav">
-    <a href="/admin" class="<%= activeNav === 'dashboard' ? 'is-active' : '' %>">Trang chủ</a>
-    <a href="/admin/hoc-sinh" class="<%= activeNav === 'students' ? 'is-active' : '' %>">Học sinh</a>
-    <a href="/admin/dang-ky" class="<%= activeNav === 'registration-list' ? 'is-active' : '' %>">Đăng ký &amp; phát đồ</a>
-    <a href="/admin/dang-ky/upload" class="<%= activeNav === 'registration-upload' ? 'is-active' : '' %>">Tải file đăng ký</a>
-    <a href="/admin/dang-ky/loi" class="<%= activeNav === 'registration-issues' ? 'is-active' : '' %>">Cần xử lý</a>
-    <a href="/admin/ds-no" class="<%= activeNav === 'ds-no' ? 'is-active' : '' %>">File DS đăng ký có size</a>
-    <a href="/admin/the-hoc-sinh" class="<%= activeNav === 'cards' ? 'is-active' : '' %>">Thẻ học sinh</a>
-    <a href="/admin/bao-cao" class="<%= activeNav === 'reports' ? 'is-active' : '' %>">Báo cáo</a>
-    <a href="/admin/danh-muc" class="<%= activeNav === 'categories' ? 'is-active' : '' %>">Danh mục</a>
-    <a href="/admin/dot-dang-ky" class="<%= activeNav === 'batches' ? 'is-active' : '' %>">Đợt đăng ký</a>
+<aside class="sidebar">
+  <a href="/admin" class="sidebar__brand">
+    <img src="/img/logo-fpt-schools.png" alt="FPT Schools" class="sidebar__logo" />
+    <div class="sidebar__brand-title">Đồng phục &amp; Thẻ HS<br />2026-2027</div>
+  </a>
+
+  <nav class="sidebar__nav">
+    <a href="/admin" class="sidebar__link <%= activeNav === 'dashboard' ? 'is-active' : '' %>"><span class="sidebar__icon">🏠</span> Tổng quan</a>
+    <a href="/admin/hoc-sinh" class="sidebar__link <%= activeNav === 'students' ? 'is-active' : '' %>"><span class="sidebar__icon">🎓</span> Học sinh</a>
+    <a href="/admin/dang-ky" class="sidebar__link <%= activeNav === 'registration-list' ? 'is-active' : '' %>"><span class="sidebar__icon">👕</span> Đăng ký &amp; phát đồ</a>
+    <a href="/admin/dang-ky/upload" class="sidebar__link <%= activeNav === 'registration-upload' ? 'is-active' : '' %>"><span class="sidebar__icon">📥</span> Tải file đăng ký</a>
+    <a href="/admin/dang-ky/loi" class="sidebar__link <%= activeNav === 'registration-issues' ? 'is-active' : '' %>"><span class="sidebar__icon">⚠️</span> Cần xử lý</a>
+    <a href="/admin/ds-no" class="sidebar__link <%= activeNav === 'ds-no' ? 'is-active' : '' %>"><span class="sidebar__icon">📋</span> File DS đăng ký có size</a>
+    <a href="/admin/the-hoc-sinh" class="sidebar__link <%= activeNav === 'cards' ? 'is-active' : '' %>"><span class="sidebar__icon">🪪</span> Thẻ học sinh</a>
+
+    <div class="sidebar__group">
+      <div class="sidebar__group-label"><span class="sidebar__icon">📊</span> Báo cáo</div>
+      <a href="/admin/bao-cao" class="sidebar__link sidebar__link--sub <%= activeNav === 'reports' ? 'is-active' : '' %>"><span class="sidebar__icon">👕</span> Báo cáo đồng phục</a>
+      <a href="/admin/bao-cao-the" class="sidebar__link sidebar__link--sub <%= activeNav === 'reports-cards' ? 'is-active' : '' %>"><span class="sidebar__icon">🪪</span> Báo cáo thẻ học sinh</a>
+    </div>
+
+    <a href="/admin/danh-muc" class="sidebar__link <%= activeNav === 'categories' ? 'is-active' : '' %>"><span class="sidebar__icon">🗂️</span> Danh mục</a>
+    <a href="/admin/dot-dang-ky" class="sidebar__link <%= activeNav === 'batches' ? 'is-active' : '' %>"><span class="sidebar__icon">🗓️</span> Đợt đăng ký</a>
   </nav>
-  <div class="admin-header__user">
-    <span><%= session.username %> (<%= session.role === 'admin' ? 'toàn quyền' : 'chỉ xem' %>)</span>
+
+  <div class="sidebar__mascot">
+    <img src="/img/kien-yeu-thuong.png" alt="Kiến Sáng" />
+  </div>
+
+  <div class="sidebar__user">
+    <span><%= session.username.charAt(0).toUpperCase() + session.username.slice(1) %></span>
     <form action="/admin/logout" method="post" style="margin:0">
       <button class="btn-link" type="submit">Đăng xuất</button>
     </form>
   </div>
-</header>
+</aside>

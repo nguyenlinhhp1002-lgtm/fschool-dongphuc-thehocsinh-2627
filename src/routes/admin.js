@@ -126,7 +126,7 @@ router.get(
     ]);
     res.render('admin/dashboard', {
       ...baseLocals(req),
-      pageTitle: 'Trang chủ',
+      pageTitle: 'Tổng quan',
       activeNav: 'dashboard',
       overview,
       categoryTotals,
@@ -799,6 +799,37 @@ router.get(
     const buffer = await buildSimpleXlsx('Tien do phat', ['Nhóm', 'Loại trang phục', 'Tổng đăng ký', 'Tổng đã phát'], data);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="bao-cao-tien-do-phat.xlsx"');
+    res.send(Buffer.from(buffer));
+  })
+);
+
+// ---------- Bao cao the hoc sinh ----------
+
+router.get(
+  '/bao-cao-the',
+  asyncHandler(async (req, res) => {
+    const groupBy = req.query.nhom === 'khoi' ? 'khoi' : 'lop';
+    const [stats, progressByGroup] = await Promise.all([cardRepo.getCardStats(), cardRepo.getProgressByGroup(groupBy)]);
+    res.render('admin/reports-cards', {
+      ...baseLocals(req),
+      pageTitle: 'Báo cáo thẻ học sinh',
+      activeNav: 'reports-cards',
+      stats,
+      progressByGroup,
+      groupBy,
+    });
+  })
+);
+
+router.get(
+  '/bao-cao-the/xuat.xlsx',
+  asyncHandler(async (req, res) => {
+    const groupBy = req.query.nhom === 'khoi' ? 'khoi' : 'lop';
+    const rows = await cardRepo.getProgressByGroup(groupBy);
+    const data = rows.map((r) => [r.nhom, r.tong_luot, r.da_tra, r.dang_tien_hanh, r.tong_day]);
+    const buffer = await buildSimpleXlsx('Bao cao the HS', ['Nhóm', 'Tổng lượt', 'Đã trả', 'Đang tiến hành', 'Có dây'], data);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="bao-cao-the-hoc-sinh.xlsx"');
     res.send(Buffer.from(buffer));
   })
 );
