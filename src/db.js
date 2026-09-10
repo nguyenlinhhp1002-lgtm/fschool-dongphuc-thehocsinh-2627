@@ -15,11 +15,13 @@ const authToken = process.env.TURSO_AUTH_TOKEN;
 const db = createClient({ url, authToken });
 
 const SCHEMA_SQL = `
+  -- role 'lop': tai khoan rieng cho 1 lop (GVCN...), chi xem duoc du lieu cua dung lop do (cot lop).
   CREATE TABLE IF NOT EXISTS admins (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('admin', 'viewer')),
+    role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('admin', 'viewer', 'lop')),
+    lop TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -226,6 +228,42 @@ async function addColumnIfMissing(table, column, definition) {
   }
 }
 
+/**
+ * Them role 'lop' + cot 'lop' vao bang admins cho DB da co san tu truoc. SQLite khong cho
+ * sua CHECK constraint bang ALTER TABLE, nen phai tao bang moi (dung CHECK moi) roi chuyen
+ * du lieu qua - cach lam chuan cho truong hop nay. Guard bang cach doc lai dinh nghia bang
+ * tu sqlite_master, chi chay khi CHECK hien tai CHUA co 'lop'.
+ */
+async function migrateAdminsRoleCheckIfNeeded() {
+  const rs = await db.execute("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'admins'");
+  const currentSql = rs.rows[0] ? rs.rows[0].sql : '';
+  if (!currentSql || currentSql.includes("'lop'")) return;
+
+  await db.batch(
+    [
+      {
+        sql: `CREATE TABLE admins_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('admin', 'viewer', 'lop')),
+          lop TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )`,
+        args: [],
+      },
+      {
+        sql: `INSERT INTO admins_new (id, username, password_hash, role, created_at)
+              SELECT id, username, password_hash, role, created_at FROM admins`,
+        args: [],
+      },
+      { sql: 'DROP TABLE admins', args: [] },
+      { sql: 'ALTER TABLE admins_new RENAME TO admins', args: [] },
+    ],
+    'write'
+  );
+}
+
 async function migrateColumns() {
   for (const m of COLUMN_MIGRATIONS) {
     await addColumnIfMissing(m.table, m.column, m.definition);
@@ -309,6 +347,7 @@ function ensureSchema() {
     // che do enforce FK, khac voi file SQLite local nen loi nay khong lo ra khi test local).
     schemaReadyPromise = db
       .executeMultiple(SCHEMA_SQL)
+      .then(migrateAdminsRoleCheckIfNeeded)
       .then(migrateColumns)
       .then(seedSizeGroupsIfEmpty)
       .then(seedCategoriesIfEmpty);
