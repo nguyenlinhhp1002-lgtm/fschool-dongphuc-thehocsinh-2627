@@ -23,12 +23,20 @@
           <label>Khối</label>
           <select name="khoi"><option value="">Tất cả</option><% [...new Set(lopKhoiList.map(l=>l.khoi))].forEach(k => { %><option value="<%= k %>"><%= k %></option><% }) %></select>
         </div>
+        <div class="form-field">
+          <label>Đợt đăng ký</label>
+          <select name="batchId">
+            <option value="">Tất cả</option>
+            <% batches.forEach(b => { %><option value="<%= b.id %>"><%= b.ten_dot %></option><% }) %>
+          </select>
+        </div>
         <div class="form-field form-field--checkbox">
           <input type="checkbox" id="onlyMissingSize" name="onlyMissingSize" value="1" />
           <label for="onlyMissingSize" style="margin:0">Chỉ học sinh chưa có size</label>
         </div>
         <button class="btn btn-primary" type="submit">Tải file DS đăng ký có size (.xlsx)</button>
       </form>
+      <p style="font-size:0.78rem; color:var(--text-muted); margin:8px 0 0">Lọc theo đợt: chỉ hiện học sinh có đăng ký trong đợt đó; số lượng mỗi loại trong file vẫn là tổng cộng dồn qua tất cả các đợt.</p>
     </div>
 
     <% if (preview) { %>

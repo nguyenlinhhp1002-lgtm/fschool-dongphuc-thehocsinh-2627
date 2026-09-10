@@ -1,7 +1,7 @@
 const ExcelJS = require('exceljs');
 const { getActiveCategories, getSizeGroupsMap, buildExportColumnPlan } = require('./categoriesRepo');
 const { getStudentIdsWithRegistrations, getAllSummaryGrouped, getAllMeasurementsMap } = require('./summaryRepo');
-const { getBatchLabelsForAllStudents } = require('./registrationRepo');
+const { getBatchLabelsForAllStudents, getMaHsSetForBatch } = require('./registrationRepo');
 
 const COT_CO_DINH_DAU = ['Mã số học sinh', 'Họ tên', 'Lớp', 'Giới tính', 'Chiều cao (cm)', 'Cân nặng (kg)', 'Vòng bụng (cm)', 'Chiều dài chân (cm)'];
 const COT_CO_DINH_CUOI = ['Đợt đăng ký', 'Ghi chú'];
@@ -30,18 +30,21 @@ function groupSizeValue(summaryByCode, groupCode, categories) {
 
 /**
  * Sinh workbook "DS đăng ký có size" dung dinh dang Template moi (cot dong theo danh muc
- * active + size_groups). filter: { lop, khoi, onlyMissingSize }
+ * active + size_groups). filter: { lop, khoi, onlyMissingSize, batchId }
+ * batchId (neu co): chi lay hoc sinh co dong gop so luong trong dot dang ky do (so luong
+ * hien thi van la tong cong don qua tat ca cac dot, chi dot dung de LOC hoc sinh nao xuat hien).
  * Tra ve { buffer, header, rowCount }
  */
 async function buildDsNoWorkbook(filter = {}) {
   const [categories, sizeGroupsMap] = await Promise.all([getActiveCategories(), getSizeGroupsMap()]);
   const plan = buildExportColumnPlan(categories, sizeGroupsMap);
 
-  const [students, summaryGrouped, measurementsMap, batchLabelsMap] = await Promise.all([
+  const [students, summaryGrouped, measurementsMap, batchLabelsMap, batchMaHsSet] = await Promise.all([
     getStudentIdsWithRegistrations({ lop: filter.lop, khoi: filter.khoi, q: filter.q }),
     getAllSummaryGrouped(),
     getAllMeasurementsMap(),
     getBatchLabelsForAllStudents(),
+    filter.batchId ? getMaHsSetForBatch(filter.batchId) : null,
   ]);
 
   const header = [...COT_CO_DINH_DAU];
@@ -59,6 +62,7 @@ async function buildDsNoWorkbook(filter = {}) {
 
   let rowCount = 0;
   for (const student of students) {
+    if (batchMaHsSet && !batchMaHsSet.has(student.ma_hs)) continue;
     const summaryByCode = summaryGrouped.get(student.ma_hs) || new Map();
     if (filter.onlyMissingSize && !thieuSize(summaryByCode, categories)) continue;
 

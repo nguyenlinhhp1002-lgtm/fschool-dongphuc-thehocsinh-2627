@@ -273,10 +273,20 @@ async function getBatchLabelsForAllStudents() {
   return map;
 }
 
+/** Tap hop ma_hs cua cac hoc sinh co dong gop so luong (tinh_vao_so_lieu=1) trong 1 dot dang ky. */
+async function getMaHsSetForBatch(batchId) {
+  const rs = await db.execute({
+    sql: 'SELECT DISTINCT ma_hs FROM registration_items WHERE batch_id = ? AND tinh_vao_so_lieu = 1',
+    args: [batchId],
+  });
+  return new Set(rs.rows.map((r) => r.ma_hs));
+}
+
 module.exports = {
   resolveRegistrationRows,
   tomTatKetQua,
   commitRegistrationImport,
+  getMaHsSetForBatch,
   getRegistrationUploadHistory,
   getIssueRows,
   fixRegistrationItem,

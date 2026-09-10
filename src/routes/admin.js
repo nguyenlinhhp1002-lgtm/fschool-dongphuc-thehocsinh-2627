@@ -581,9 +581,10 @@ router.post(
 router.get(
   '/ds-no',
   asyncHandler(async (req, res) => {
-    const [lopKhoiList, history] = await Promise.all([
+    const [lopKhoiList, history, batches] = await Promise.all([
       studentsRepo.getDistinctLopKhoi(),
       dsNoImport.getDsNoUploadHistory(),
+      batchesRepo.getAllBatches(),
     ]);
     res.render('admin/ds-no', {
       ...baseLocals(req),
@@ -591,6 +592,7 @@ router.get(
       activeNav: 'ds-no',
       lopKhoiList,
       history,
+      batches,
       preview: null,
       uploadErrors: null,
     });
@@ -600,16 +602,22 @@ router.get(
 router.get(
   '/ds-no/xuat.xlsx',
   asyncHandler(async (req, res) => {
-    const { lop = '', khoi = '', onlyMissingSize } = req.query;
+    const { lop = '', khoi = '', onlyMissingSize, batchId = '' } = req.query;
     const { buffer, rowCount } = await buildDsNoWorkbook({
       lop: lop || undefined,
       khoi: khoi || undefined,
       onlyMissingSize: onlyMissingSize === '1',
+      batchId: batchId ? Number(batchId) : undefined,
     });
+    let tenDot = '';
+    if (batchId) {
+      const batch = await batchesRepo.getBatchById(Number(batchId));
+      tenDot = batch ? ` - ${batch.ten_dot}` : '';
+    }
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const filename = `DS dang ky co size - xuat ${dd}.${mm}.${today.getFullYear()}${rowCount === 0 ? ' (rong)' : ''}.xlsx`;
+    const filename = `DS dang ky co size${tenDot} - xuat ${dd}.${mm}.${today.getFullYear()}${rowCount === 0 ? ' (rong)' : ''}.xlsx`;
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
     res.send(Buffer.from(buffer));
@@ -624,9 +632,10 @@ router.post(
     if (!isCsrfTokenValid(req)) return renderCsrfError(res);
 
     const renderWithError = async (errors) => {
-      const [lopKhoiList, history] = await Promise.all([
+      const [lopKhoiList, history, batches] = await Promise.all([
         studentsRepo.getDistinctLopKhoi(),
         dsNoImport.getDsNoUploadHistory(),
+        batchesRepo.getAllBatches(),
       ]);
       res.render('admin/ds-no', {
         ...baseLocals(req),
@@ -634,6 +643,7 @@ router.post(
         activeNav: 'ds-no',
         lopKhoiList,
         history,
+        batches,
         preview: null,
         uploadErrors: errors,
       });
@@ -652,9 +662,10 @@ router.post(
     const changes = await dsNoImport.tinhChenhLechSoLuong(parsed.rows);
     const token = pendingStore.put('dsNo', { rows: parsed.rows, filename: req.file.originalname, changes });
 
-    const [lopKhoiList, history] = await Promise.all([
+    const [lopKhoiList, history, batches] = await Promise.all([
       studentsRepo.getDistinctLopKhoi(),
       dsNoImport.getDsNoUploadHistory(),
+      batchesRepo.getAllBatches(),
     ]);
     res.render('admin/ds-no', {
       ...baseLocals(req),
@@ -662,6 +673,7 @@ router.post(
       activeNav: 'ds-no',
       lopKhoiList,
       history,
+      batches,
       uploadErrors: null,
       preview: {
         token,
