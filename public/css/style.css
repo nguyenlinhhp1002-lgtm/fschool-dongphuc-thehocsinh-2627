@@ -281,6 +281,17 @@ input, select, textarea {
   font-weight: 800;
   font-size: 0.95rem;
 }
+.admin-header__logo {
+  height: 38px;
+  width: auto;
+  background: var(--white);
+  border-radius: 6px;
+  padding: 3px 6px;
+}
+.admin-header__mascot {
+  height: 46px;
+  width: auto;
+}
 .admin-header__nav {
   display: flex;
   gap: 4px;
