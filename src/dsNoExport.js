@@ -40,7 +40,7 @@ async function buildDsNoWorkbook(filter = {}) {
   header.push(...COT_CO_DINH_CUOI);
 
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet('DS nợ');
+  const sheet = workbook.addWorksheet('DS dang ky co size');
   sheet.addRow(header);
   sheet.getRow(1).font = { bold: true };
 
@@ -60,7 +60,7 @@ async function buildDsNoWorkbook(filter = {}) {
       measurements.can_nang_kg ?? null,
       measurements.vong_bung_cm ?? null,
       measurements.dai_chan_cm ?? null,
-      measurements.gioi_tinh ?? null,
+      student.gioi_tinh || measurements.gioi_tinh || null,
     ];
     for (const cat of categories) {
       const s = summaryByCode.get(cat.code_prefix);

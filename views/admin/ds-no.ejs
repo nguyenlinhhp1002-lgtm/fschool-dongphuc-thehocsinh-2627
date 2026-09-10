@@ -4,10 +4,10 @@
 <body class="admin-page">
   <%- include('../partials/adminNav', { session, activeNav }) %>
   <main class="admin-main">
-    <h1>File "DS nợ"</h1>
+    <h1>File "DS đăng ký có size"</h1>
     <p class="admin-main__desc">Xuất file để đo &amp; điền tay số đo cơ thể + size ngoài hệ thống, sau đó tải file đã điền lên lại.</p>
 
-    <% if (typeof ok !== 'undefined' && ok) { %><div class="alert alert--success">Đã cập nhật dữ liệu từ file DS nợ thành công.</div><% } %>
+    <% if (typeof ok !== 'undefined' && ok) { %><div class="alert alert--success">Đã cập nhật dữ liệu từ file DS đăng ký có size thành công.</div><% } %>
     <% if (uploadErrors) { %>
       <div class="alert alert--error"><b>Không nhập được file:</b><ul><% uploadErrors.forEach(e => { %><li><%= e %></li><% }) %></ul></div>
     <% } %>
@@ -27,7 +27,7 @@
           <input type="checkbox" id="onlyMissingSize" name="onlyMissingSize" value="1" />
           <label for="onlyMissingSize" style="margin:0">Chỉ học sinh chưa có size</label>
         </div>
-        <button class="btn btn-primary" type="submit">Tải file DS nợ (.xlsx)</button>
+        <button class="btn btn-primary" type="submit">Tải file DS đăng ký có size (.xlsx)</button>
       </form>
     </div>
 
@@ -71,7 +71,7 @@
       </div>
     <% } %>
 
-    <h2>Lịch sử tải lên DS nợ</h2>
+    <h2>Lịch sử tải lên DS đăng ký có size</h2>
     <div class="table-scroll">
       <table class="data-table">
         <thead><tr><th>Thời gian</th><th>Người tải</th><th>File</th><th>Tổng dòng</th><th>Số dòng sửa SL</th></tr></thead>

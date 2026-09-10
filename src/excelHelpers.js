@@ -66,6 +66,20 @@ function readHeaderRow(sheet) {
   return raw.map((h) => cellToString(h));
 }
 
+/** Doc gia tri hang header nhung TRIM tung o (phong khi file co khoang trang du trong ten cot, vd "Đợt đăng ký "). */
+function readHeaderRowTrimmed(sheet) {
+  return readHeaderRow(sheet).map((h) => h.trim());
+}
+
+/** Chuan hoa Gioi tinh ve "Nam"/"Nữ" du file goc ghi kieu gi (Nam/Nữ, Male/Female, M/F...); giu nguyen neu khong nhan ra. */
+function normalizeGioiTinh(value) {
+  const raw = cellToString(value).trim();
+  const norm = raw.toLowerCase();
+  if (['nam', 'male', 'm', 'boy'].includes(norm)) return 'Nam';
+  if (['nữ', 'nu', 'female', 'f', 'girl'].includes(norm)) return 'Nữ';
+  return raw || null;
+}
+
 module.exports = {
   ExcelValidationError,
   cellToString,
@@ -74,4 +88,6 @@ module.exports = {
   parseDateVN,
   formatDateVN,
   readHeaderRow,
+  readHeaderRowTrimmed,
+  normalizeGioiTinh,
 };

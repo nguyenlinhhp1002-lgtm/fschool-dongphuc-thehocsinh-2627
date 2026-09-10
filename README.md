@@ -36,13 +36,13 @@ Hoặc `npm run dev` (tự restart khi sửa code). Mở http://localhost:3000 �
    Đặt/xác nhận tên đợt (vd "Đợt 2") trước khi xác nhận nhập.
 3. **Cần xử lý** → xử lý các dòng không khớp mã học sinh, không rõ loại trang phục, hoặc bất
    thường (nghi là đơn gộp nhiều món).
-4. **File DS nợ** → xuất file để đo & điền size ngoài hệ thống, sau đó tải file đã điền lên lại.
-5. **Đăng ký & phát đồ** → bảng bố cục theo DS nợ, đánh dấu đã phát/chưa phát trực tiếp trên bảng,
+4. **File DS đăng ký có size** → xuất file để đo & điền size ngoài hệ thống, sau đó tải file đã điền lên lại.
+5. **Đăng ký & phát đồ** → bảng bố cục theo DS đăng ký có size, đánh dấu đã phát/chưa phát trực tiếp trên bảng,
    sửa size nhanh, phát hàng loạt theo lớp.
 6. **Báo cáo** → tổng quan, bảng loại trang phục × size, theo lớp/khối/đợt đăng ký, tiến độ phát —
    đều xuất được ra Excel.
 7. **Danh mục / Đợt đăng ký** → chỉnh sửa danh mục loại trang phục (tên gọi "Món" nhận diện được,
-   tên cột khi xuất DS nợ) và danh sách đợt đăng ký mà không cần sửa code.
+   tên cột khi xuất DS đăng ký có size) và danh sách đợt đăng ký mà không cần sửa code.
 
 ## 5. Quản lý tài khoản
 
@@ -64,6 +64,6 @@ trên host không có ổ đĩa riêng; bỏ trống 2 biến này khi chạy lo
 ## 7. Giả định đã chọn (xem thêm mục 10 trong spec gốc)
 
 - Size lưu dạng **text tự do** (chưa ép hệ size cụ thể — trường có thể dùng S/M/L hoặc số).
-- Cột "Đợt đăng ký" khi xuất DS nợ liệt kê **tất cả** các đợt đã đóng góp số lượng cho học sinh đó.
+- Cột "Đợt đăng ký" khi xuất DS đăng ký có size liệt kê **tất cả** các đợt đã đóng góp số lượng cho học sinh đó.
 - Chỉ làm việc qua upload/download Excel, không tích hợp API thu phí thời gian thực.
 - Dòng "Món" chứa mã code thô (vd `QD3`) được gắn cờ "cần kiểm tra tay", không tự tách dòng.

@@ -54,6 +54,9 @@ const dsNoImport = require('../dsNoImport');
 const reportsRepo = require('../reportsRepo');
 const { buildSimpleXlsx } = require('../exportXlsx');
 
+const { parseCardExcelBuffer } = require('../cardImport');
+const cardRepo = require('../cardRepo');
+
 /** Xay lai query string tu 1 object (bo qua gia tri rong), dung de "quay lai trang cu voi bo loc cu" sau khi POST. */
 function toQueryString(params) {
   const qs = new URLSearchParams();
@@ -114,9 +117,10 @@ function baseLocals(req) {
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    const [overview, categoryTotals] = await Promise.all([
+    const [overview, categoryTotals, cardStats] = await Promise.all([
       reportsRepo.getDashboardOverview(),
       reportsRepo.getCategoryTotals(),
+      cardRepo.getCardStats(),
     ]);
     res.render('admin/dashboard', {
       ...baseLocals(req),
@@ -124,6 +128,7 @@ router.get(
       activeNav: 'dashboard',
       overview,
       categoryTotals,
+      cardStats,
     });
   })
 );
@@ -587,7 +592,7 @@ router.get(
     ]);
     res.render('admin/ds-no', {
       ...baseLocals(req),
-      pageTitle: 'File "DS nợ"',
+      pageTitle: 'File "DS đăng ký có size"',
       activeNav: 'ds-no',
       lopKhoiList,
       history,
@@ -609,7 +614,7 @@ router.get(
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const filename = `DS no - xuat ${dd}.${mm}.${today.getFullYear()}${rowCount === 0 ? ' (rong)' : ''}.xlsx`;
+    const filename = `DS dang ky co size - xuat ${dd}.${mm}.${today.getFullYear()}${rowCount === 0 ? ' (rong)' : ''}.xlsx`;
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
     res.send(Buffer.from(buffer));
@@ -630,7 +635,7 @@ router.post(
       ]);
       res.render('admin/ds-no', {
         ...baseLocals(req),
-        pageTitle: 'File "DS nợ"',
+        pageTitle: 'File "DS đăng ký có size"',
         activeNav: 'ds-no',
         lopKhoiList,
         history,
@@ -658,7 +663,7 @@ router.post(
     ]);
     res.render('admin/ds-no', {
       ...baseLocals(req),
-      pageTitle: 'File "DS nợ"',
+      pageTitle: 'File "DS đăng ký có size"',
       activeNav: 'ds-no',
       lopKhoiList,
       history,
@@ -788,6 +793,145 @@ router.get(
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="bao-cao-tien-do-phat.xlsx"');
     res.send(Buffer.from(buffer));
+  })
+);
+
+// ---------- The hoc sinh ----------
+
+router.get(
+  '/the-hoc-sinh',
+  asyncHandler(async (req, res) => {
+    const { q = '', lop = '', khoi = '', trangThai = '', page } = req.query;
+    const [result, lopKhoiList, history, stats] = await Promise.all([
+      cardRepo.searchCardItems({ q, lop, khoi, trangThai, page: Number(page) || 1, pageSize: 50 }),
+      studentsRepo.getDistinctLopKhoi(),
+      cardRepo.getCardUploadHistory(),
+      cardRepo.getCardStats(),
+    ]);
+    res.render('admin/cards', {
+      ...baseLocals(req),
+      pageTitle: 'Thẻ học sinh',
+      activeNav: 'cards',
+      result,
+      lopKhoiList,
+      history,
+      stats,
+      filters: { q, lop, khoi, trangThai },
+      preview: null,
+      uploadErrors: null,
+      ok: req.query.ok === '1',
+      moi: req.query.moi || 0,
+      trung: req.query.trung || 0,
+    });
+  })
+);
+
+router.post(
+  '/the-hoc-sinh/upload',
+  requireFullAdmin,
+  uploadExcel.single('file'),
+  asyncHandler(async (req, res) => {
+    if (!isCsrfTokenValid(req)) return renderCsrfError(res);
+
+    const renderWithError = async (errors) => {
+      const [result, lopKhoiList, history, stats] = await Promise.all([
+        cardRepo.searchCardItems({ page: 1, pageSize: 50 }),
+        studentsRepo.getDistinctLopKhoi(),
+        cardRepo.getCardUploadHistory(),
+        cardRepo.getCardStats(),
+      ]);
+      res.render('admin/cards', {
+        ...baseLocals(req),
+        pageTitle: 'Thẻ học sinh',
+        activeNav: 'cards',
+        result,
+        lopKhoiList,
+        history,
+        stats,
+        filters: {},
+        preview: null,
+        ok: false,
+        uploadErrors: errors,
+      });
+    };
+
+    if (!req.file) return renderWithError(['Vui lòng chọn 1 file Excel (.xlsx) để tải lên.']);
+
+    let parsed;
+    try {
+      parsed = await parseCardExcelBuffer(req.file.buffer);
+    } catch (err) {
+      if (err instanceof ExcelValidationError) return renderWithError(err.errors);
+      throw err;
+    }
+
+    const resolvedRows = await cardRepo.resolveCardRows(parsed.rows);
+    const token = pendingStore.put('card', { resolvedRows, filename: req.file.originalname });
+
+    const [result, lopKhoiList, history, stats] = await Promise.all([
+      cardRepo.searchCardItems({ page: 1, pageSize: 50 }),
+      studentsRepo.getDistinctLopKhoi(),
+      cardRepo.getCardUploadHistory(),
+      cardRepo.getCardStats(),
+    ]);
+    res.render('admin/cards', {
+      ...baseLocals(req),
+      pageTitle: 'Thẻ học sinh',
+      activeNav: 'cards',
+      result,
+      lopKhoiList,
+      history,
+      stats,
+      filters: {},
+      ok: false,
+      uploadErrors: null,
+      preview: {
+        token,
+        filename: req.file.originalname,
+        tongDong: resolvedRows.length,
+        soLoiMaHs: resolvedRows.filter((r) => !r.khopMaHs).length,
+        soCoDay: resolvedRows.filter((r) => r.coDay).length,
+        mauLoi: resolvedRows.filter((r) => !r.khopMaHs).slice(0, 20),
+      },
+    });
+  })
+);
+
+router.post(
+  '/the-hoc-sinh/upload/confirm',
+  requireFullAdmin,
+  verifyCsrfToken,
+  asyncHandler(async (req, res) => {
+    const pending = pendingStore.consume('card', req.body.token);
+    if (!pending) {
+      return res.status(400).render('admin/error', {
+        title: 'Phiên tải file đã hết hạn',
+        message: 'Dữ liệu xem trước đã hết hạn (quá 30 phút) hoặc đã được xác nhận trước đó. Vui lòng tải file lên lại.',
+      });
+    }
+    const result = await cardRepo.commitCardImport({
+      resolvedRows: pending.resolvedRows,
+      adminUsername: req.session.username,
+      filename: pending.filename,
+    });
+    res.redirect(`/admin/the-hoc-sinh?ok=1&moi=${result.soDongDaGhi}&trung=${result.soDongTrung}`);
+  })
+);
+
+router.post(
+  '/the-hoc-sinh/cap-nhat',
+  requireFullAdmin,
+  verifyCsrfToken,
+  asyncHandler(async (req, res) => {
+    const { id, hanhDong, giaTri, returnTo } = req.body;
+    if (hanhDong === 'toggle_the') {
+      await cardRepo.updateCardItem(id, { coThe: giaTri === '1', adminUsername: req.session.username });
+    } else if (hanhDong === 'toggle_day') {
+      await cardRepo.updateCardItem(id, { coDay: giaTri === '1', adminUsername: req.session.username });
+    } else if (hanhDong === 'set_trang_thai') {
+      await cardRepo.updateCardItem(id, { trangThai: giaTri, adminUsername: req.session.username });
+    }
+    res.redirect(returnTo && returnTo.startsWith('/admin/the-hoc-sinh') ? returnTo : '/admin/the-hoc-sinh');
   })
 );
 

@@ -4,12 +4,12 @@
 <body class="admin-page">
   <%- include('../partials/adminNav', { session, activeNav }) %>
   <main class="admin-main">
-    <h1>Trang chủ</h1>
-    <p class="admin-main__desc">Tổng quan tình hình đăng ký và phát đồng phục toàn trường.</p>
+    <h1>Đồng phục &amp; Thẻ học sinh 2026-2027</h1>
+    <p class="admin-main__desc">Tổng quan tình hình đăng ký, phát đồng phục và thẻ học sinh toàn trường.</p>
 
     <div class="stat-cards">
       <div class="stat-card">
-        <div class="stat-card__label">Học sinh đã đăng ký</div>
+        <div class="stat-card__label">Học sinh đã đăng ký đồng phục</div>
         <div class="stat-card__value"><%= overview.tongHocSinhDangKy %></div>
         <div class="stat-card__sub">/ <%= overview.tongHocSinhToanTruong %> học sinh đang học</div>
       </div>
@@ -28,7 +28,27 @@
       <div class="stat-card">
         <div class="stat-card__label">Học sinh còn thiếu size</div>
         <div class="stat-card__value <%= overview.soHocSinhThieuSize > 0 ? 'warn' : '' %>"><%= overview.soHocSinhThieuSize %></div>
-        <div class="stat-card__sub"><a href="/admin/ds-no">Xuất DS nợ để đo &amp; điền size →</a></div>
+        <div class="stat-card__sub"><a href="/admin/ds-no">Xuất file DS đăng ký có size →</a></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Thẻ học sinh</h2>
+      <div class="stat-cards" style="margin-bottom:0">
+        <div class="stat-card">
+          <div class="stat-card__label">Học sinh đã đăng ký thẻ</div>
+          <div class="stat-card__value"><%= cardStats.tongHocSinh %></div>
+          <div class="stat-card__sub"><%= cardStats.tongDong %> lượt đăng ký/cấp lại</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__label">Đã trả / Đang tiến hành</div>
+          <div class="stat-card__value"><%= cardStats.daTra %> / <%= cardStats.dangTienHanh %></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__label">Có đăng ký bộ dây bao thẻ</div>
+          <div class="stat-card__value"><%= cardStats.tongDay %></div>
+          <div class="stat-card__sub"><a href="/admin/the-hoc-sinh">Xem quản lý thẻ học sinh →</a></div>
+        </div>
       </div>
     </div>
 
@@ -53,19 +73,21 @@
       <div class="card">
         <h2 style="margin-top:0">Việc cần làm</h2>
         <p style="font-size:0.86rem; line-height:1.9">
-          📥 <a href="/admin/dang-ky/upload">Tải lên file đăng ký mới</a><br />
+          📥 <a href="/admin/dang-ky/upload">Tải lên file đăng ký đồng phục mới</a><br />
           ⚠️ <a href="/admin/dang-ky/loi">Xử lý các dòng đăng ký lỗi</a><br />
-          📤 <a href="/admin/ds-no">Xuất file DS nợ để đo &amp; điền size</a><br />
-          ✅ <a href="/admin/dang-ky">Cập nhật trạng thái phát đồ</a>
+          📤 <a href="/admin/ds-no">Xuất file DS đăng ký có size để đo &amp; điền</a><br />
+          ✅ <a href="/admin/dang-ky">Cập nhật trạng thái phát đồ</a><br />
+          🪪 <a href="/admin/the-hoc-sinh">Tải file đăng ký thẻ học sinh &amp; cập nhật trạng thái</a>
         </p>
       </div>
       <div class="card">
         <h2 style="margin-top:0">Bắt đầu nhanh</h2>
         <p style="font-size:0.86rem; line-height:1.9">
           1. Cập nhật <a href="/admin/hoc-sinh">danh sách học sinh toàn trường</a><br />
-          2. Tải lên <a href="/admin/dang-ky/upload">file đăng ký từng đợt</a><br />
-          3. Xuất <a href="/admin/ds-no">file DS nợ</a>, đo &amp; điền size ngoài hệ thống<br />
-          4. Tải file đã điền lên lại, rồi đánh dấu <a href="/admin/dang-ky">phát đồ</a>
+          2. Tải lên <a href="/admin/dang-ky/upload">file đăng ký đồng phục từng đợt</a><br />
+          3. Xuất <a href="/admin/ds-no">file DS đăng ký có size</a>, đo &amp; điền size ngoài hệ thống<br />
+          4. Tải file đã điền lên lại, rồi đánh dấu <a href="/admin/dang-ky">phát đồ</a><br />
+          5. Tải file <a href="/admin/the-hoc-sinh">đăng ký thẻ học sinh</a> và cập nhật khi trả thẻ
         </p>
       </div>
     </div>

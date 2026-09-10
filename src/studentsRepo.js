@@ -30,15 +30,16 @@ async function commitRosterUpload({ students, diff, adminUsername, filename }) {
   }
   for (const s of students) {
     statements.push({
-      sql: `INSERT INTO students (ma_hs, ho_ten, lop, khoi, trang_thai_hoc, updated_at)
-            VALUES (?, ?, ?, ?, ?, datetime('now'))
+      sql: `INSERT INTO students (ma_hs, ho_ten, lop, khoi, trang_thai_hoc, gioi_tinh, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
             ON CONFLICT(ma_hs) DO UPDATE SET
               ho_ten = excluded.ho_ten,
               lop = excluded.lop,
               khoi = excluded.khoi,
               trang_thai_hoc = excluded.trang_thai_hoc,
+              gioi_tinh = COALESCE(excluded.gioi_tinh, gioi_tinh),
               updated_at = datetime('now')`,
-      args: [s.ma_hs, s.ho_ten, s.lop, s.khoi, s.trang_thai_hoc],
+      args: [s.ma_hs, s.ho_ten, s.lop, s.khoi, s.trang_thai_hoc, s.gioi_tinh || null],
     });
   }
   await db.batch(statements, 'write');

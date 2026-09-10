@@ -1,7 +1,8 @@
 const ExcelJS = require('exceljs');
-const { ExcelValidationError, cellToString, readHeaderRow } = require('./excelHelpers');
+const { ExcelValidationError, cellToString, readHeaderRow, normalizeGioiTinh } = require('./excelHelpers');
 
 const REQUIRED_COLUMNS = ['Mã học sinh', 'Họ và tên', 'Lớp', 'Trạng thái'];
+const OPTIONAL_COLUMNS = ['Giới tính'];
 
 /** Suy ra Khoi (6-12) tu ten Lop dang "{Khoi}A{so}", vd "10A1" -> "10". */
 function suyRaKhoi(lop) {
@@ -52,8 +53,9 @@ async function parseStudentsExcelBuffer(buffer, tenSheetChiDinh) {
   }
 
   const colIndex = {};
-  REQUIRED_COLUMNS.forEach((col) => {
-    colIndex[col] = headerRow.indexOf(col);
+  [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS].forEach((col) => {
+    const idx = headerRow.indexOf(col);
+    if (idx >= 0) colIndex[col] = idx;
   });
 
   const errors = [];
@@ -87,6 +89,7 @@ async function parseStudentsExcelBuffer(buffer, tenSheetChiDinh) {
       lop: lop || null,
       khoi: suyRaKhoi(lop),
       trang_thai_hoc: trangThai,
+      gioi_tinh: colIndex['Giới tính'] !== undefined ? normalizeGioiTinh(values[colIndex['Giới tính']]) : null,
     };
 
     if (seenMaHs.has(maHs)) {

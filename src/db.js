@@ -30,6 +30,7 @@ const SCHEMA_SQL = `
     lop TEXT,
     khoi TEXT,
     trang_thai_hoc TEXT NOT NULL DEFAULT 'Đang học',
+    gioi_tinh TEXT,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -163,6 +164,32 @@ const SCHEMA_SQL = `
     thoi_gian TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  -- Lich su upload file dang ky the hoc sinh
+  CREATE TABLE IF NOT EXISTS card_uploads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nguoi_upload TEXT NOT NULL,
+    ten_file TEXT NOT NULL,
+    tong_dong INTEGER NOT NULL DEFAULT 0,
+    so_dong_loi INTEGER NOT NULL DEFAULT 0,
+    uploaded_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  -- Tung lan dang ky the/day (cong don qua nhieu dot - hoc sinh co the mat, cap lai nhieu lan)
+  CREATE TABLE IF NOT EXISTS card_registration_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    upload_id INTEGER REFERENCES card_uploads(id),
+    ma_hs TEXT REFERENCES students(ma_hs),
+    co_the INTEGER NOT NULL DEFAULT 1,
+    co_day INTEGER NOT NULL DEFAULT 0,
+    so_tien REAL,
+    ngay_dang_ky TEXT,
+    dot_dang_ky TEXT,
+    trang_thai TEXT NOT NULL DEFAULT 'dang_tien_hanh' CHECK (trang_thai IN ('dang_tien_hanh', 'da_tra')),
+    nguoi_cap_nhat TEXT,
+    unique_key TEXT UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   CREATE INDEX IF NOT EXISTS idx_students_lop ON students(lop);
   CREATE INDEX IF NOT EXISTS idx_students_khoi ON students(khoi);
   CREATE INDEX IF NOT EXISTS idx_reg_items_ma_hs ON registration_items(ma_hs);
@@ -170,7 +197,26 @@ const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS idx_reg_items_code ON registration_items(code_prefix);
   CREATE INDEX IF NOT EXISTS idx_summary_code ON student_uniform_summary(code_prefix);
   CREATE INDEX IF NOT EXISTS idx_alias_norm ON category_aliases(ten_goc_norm);
+  CREATE INDEX IF NOT EXISTS idx_card_items_ma_hs ON card_registration_items(ma_hs);
 `;
+
+// Cac cot them sau khi da co du lieu thuc te - dung ALTER TABLE vi CREATE TABLE IF NOT
+// EXISTS khong tu them cot cho bang da ton tai san.
+const COLUMN_MIGRATIONS = [{ table: 'students', column: 'gioi_tinh', definition: 'TEXT' }];
+
+async function addColumnIfMissing(table, column, definition) {
+  const rs = await db.execute(`PRAGMA table_info(${table})`);
+  const exists = rs.rows.some((row) => row.name === column);
+  if (!exists) {
+    await db.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+
+async function migrateColumns() {
+  for (const m of COLUMN_MIGRATIONS) {
+    await addColumnIfMissing(m.table, m.column, m.definition);
+  }
+}
 
 const DEFAULT_CATEGORIES = [
   { code_prefix: 'AO', ten_hien_thi: 'Áo polo', cot_sl: 'SL Áo polo', cot_size: 'Size áo polo', co_size: 1, thu_tu: 1, aliases: ['Áo polo'] },
@@ -213,7 +259,7 @@ let schemaReadyPromise = null;
 /** Dam bao schema (bang + du lieu mac dinh) da san sang, chi chay 1 lan du goi nhieu lan (memoized). */
 function ensureSchema() {
   if (!schemaReadyPromise) {
-    schemaReadyPromise = db.executeMultiple(SCHEMA_SQL).then(seedCategoriesIfEmpty);
+    schemaReadyPromise = db.executeMultiple(SCHEMA_SQL).then(migrateColumns).then(seedCategoriesIfEmpty);
   }
   return schemaReadyPromise;
 }

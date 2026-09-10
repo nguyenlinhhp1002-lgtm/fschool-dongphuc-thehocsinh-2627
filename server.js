@@ -77,7 +77,7 @@ app.use((err, req, res, next) => {
 ensureSchema()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`Quản lý đồng phục đang chạy tại http://localhost:${PORT}`);
+      console.log(`Đồng phục & Thẻ học sinh 2026-2027 đang chạy tại http://localhost:${PORT}`);
     });
   })
   .catch((err) => {

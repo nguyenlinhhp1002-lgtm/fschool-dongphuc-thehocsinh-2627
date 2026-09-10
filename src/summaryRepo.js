@@ -53,7 +53,7 @@ async function getStudentIdsWithRegistrations({ lop, khoi, q, includeDo } = {}) 
 
   const rs = await db.execute({
     sql: `
-      SELECT s.ma_hs, s.ho_ten, s.lop, s.khoi, s.trang_thai_hoc
+      SELECT s.ma_hs, s.ho_ten, s.lop, s.khoi, s.trang_thai_hoc, s.gioi_tinh
       FROM students s
       WHERE s.ma_hs IN (
         SELECT ma_hs FROM student_uniform_summary WHERE so_luong_dang_ky > 0 GROUP BY ma_hs

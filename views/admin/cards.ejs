@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+<%
+  const qs = new URLSearchParams();
+  if (filters.q) qs.set('q', filters.q);
+  if (filters.lop) qs.set('lop', filters.lop);
+  if (filters.khoi) qs.set('khoi', filters.khoi);
+  if (filters.trangThai) qs.set('trangThai', filters.trangThai);
+  const returnTo = '/admin/the-hoc-sinh' + (qs.toString() ? '?' + qs.toString() : '');
+%>
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>Thẻ học sinh</h1>
+    <p class="admin-main__desc">Tải lên file "DS đăng ký Thẻ học sinh". Học sinh có thể đăng ký/cấp lại thẻ và bộ dây bao thẻ nhiều lần ở các đợt khác nhau (vd làm mất, cần cấp mới) — mỗi lần là 1 dòng riêng.</p>
+
+    <% if (ok) { %><div class="alert alert--success">Đã nhập <b><%= moi %></b> lượt đăng ký mới<% if (Number(trung) > 0) { %>, bỏ qua <b><%= trung %></b> dòng trùng (đã nhập trước đó)<% } %>.</div><% } %>
+    <% if (uploadErrors) { %>
+      <div class="alert alert--error"><b>Không nhập được file:</b><ul><% uploadErrors.forEach(e => { %><li><%= e %></li><% }) %></ul></div>
+    <% } %>
+
+    <div class="stat-cards">
+      <div class="stat-card"><div class="stat-card__label">Học sinh đã đăng ký</div><div class="stat-card__value"><%= stats.tongHocSinh %></div></div>
+      <div class="stat-card"><div class="stat-card__label">Tổng lượt đăng ký/cấp lại</div><div class="stat-card__value"><%= stats.tongDong %></div></div>
+      <div class="stat-card"><div class="stat-card__label">Đã trả</div><div class="stat-card__value"><%= stats.daTra %></div></div>
+      <div class="stat-card"><div class="stat-card__label">Đang tiến hành</div><div class="stat-card__value"><%= stats.dangTienHanh %></div></div>
+    </div>
+
+    <% if (preview) { %>
+      <div class="card">
+        <h2 style="margin-top:0">Kết quả đọc file — <%= preview.filename %></h2>
+        <div class="diff-summary">
+          <div class="item"><b><%= preview.tongDong %></b>Tổng số dòng</div>
+          <div class="item"><b style="color:var(--danger)"><%= preview.soLoiMaHs %></b>Không khớp mã học sinh</div>
+          <div class="item"><b style="color:var(--text-muted)"><%= preview.soCoDay %></b>Có đăng ký bộ dây bao thẻ (Amount &gt; 50.000)</div>
+        </div>
+        <% if (preview.mauLoi.length > 0) { %>
+          <p style="font-size:0.82rem"><b>Dòng không khớp mã học sinh</b> (vẫn được lưu lại, sửa mã HS trực tiếp trong danh sách bên dưới sau khi nhập):</p>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>Dòng</th><th>StudentCode</th><th>Tên (file)</th><th>Amount</th></tr></thead>
+              <tbody><% preview.mauLoi.forEach(r => { %><tr><td><%= r.rowNumber %></td><td><%= r.maHs %></td><td><%= r.ten %></td><td class="num"><%= r.soTien %></td></tr><% }) %></tbody>
+            </table>
+          </div>
+        <% } %>
+        <form method="post" action="/admin/the-hoc-sinh/upload/confirm" style="margin-top:12px">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <input type="hidden" name="token" value="<%= preview.token %>" />
+          <button class="btn btn-primary" type="submit">Xác nhận nhập dữ liệu</button>
+          <a class="btn btn-outline" href="/admin/the-hoc-sinh">Huỷ</a>
+        </form>
+      </div>
+    <% } else if (session.role === 'admin') { %>
+      <div class="card">
+        <h2 style="margin-top:0">Tải lên file đăng ký thẻ học sinh</h2>
+        <form method="post" action="/admin/the-hoc-sinh/upload" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <div class="form-row">
+            <div class="form-field"><label>File Excel (.xlsx)</label><input type="file" name="file" accept=".xlsx" required /></div>
+            <button class="btn btn-primary" type="submit">Tải lên &amp; đọc file</button>
+          </div>
+        </form>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin:8px 0 0">Cần cột StudentCode, Amount (50.000 = chỉ thẻ, &gt;50.000 = thẻ + bộ dây bao thẻ). Các cột khác (Campus, ItemCode, ItemName, PaidStatus) không dùng đến.</p>
+      </div>
+    <% } %>
+
+    <h2>Danh sách đăng ký</h2>
+    <form method="get" class="form-row">
+      <div class="form-field"><label>Tìm mã HS / tên</label><input type="text" name="q" value="<%= filters.q %>" /></div>
+      <div class="form-field">
+        <label>Lớp</label>
+        <select name="lop"><option value="">Tất cả</option><% lopKhoiList.forEach(l => { %><option value="<%= l.lop %>" <%= filters.lop===l.lop?'selected':'' %>><%= l.lop %></option><% }) %></select>
+      </div>
+      <div class="form-field">
+        <label>Khối</label>
+        <select name="khoi"><option value="">Tất cả</option><% [...new Set(lopKhoiList.map(l=>l.khoi))].forEach(k => { %><option value="<%= k %>" <%= filters.khoi===k?'selected':'' %>><%= k %></option><% }) %></select>
+      </div>
+      <div class="form-field">
+        <label>Trạng thái</label>
+        <select name="trangThai">
+          <option value="">Tất cả</option>
+          <option value="dang_tien_hanh" <%= filters.trangThai==='dang_tien_hanh'?'selected':'' %>>Đang tiến hành</option>
+          <option value="da_tra" <%= filters.trangThai==='da_tra'?'selected':'' %>>Đã trả</option>
+        </select>
+      </div>
+      <button class="btn btn-outline" type="submit">Lọc</button>
+    </form>
+
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã HS</th><th>Họ tên</th><th>Lớp</th><th>Ngày đăng ký</th><th>Đợt đăng ký</th>
+            <th>Thẻ học sinh</th><th>Bộ dây bao thẻ</th><th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% result.rows.forEach(r => { %>
+            <tr>
+              <td><%= r.ma_hs %></td>
+              <td><%= r.ho_ten || '—' %></td>
+              <td><%= r.lop || '' %></td>
+              <td><%= r.ngay_dang_ky || '' %></td>
+              <td><%= r.dot_dang_ky || '' %></td>
+              <td>
+                <% if (session.role === 'admin') { %>
+                <form method="post" action="/admin/the-hoc-sinh/cap-nhat">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="id" value="<%= r.id %>" />
+                  <input type="hidden" name="hanhDong" value="toggle_the" />
+                  <input type="hidden" name="giaTri" value="<%= r.co_the ? '0' : '1' %>" />
+                  <input type="hidden" name="returnTo" value="<%= returnTo %>" />
+                  <button class="badge <%= r.co_the ? 'badge--success' : 'badge--gray' %>" style="border:none;cursor:pointer" type="submit"><%= r.co_the ? 'Có' : 'Không' %></button>
+                </form>
+                <% } else { %><span class="badge <%= r.co_the ? 'badge--success' : 'badge--gray' %>"><%= r.co_the ? 'Có' : 'Không' %></span><% } %>
+              </td>
+              <td>
+                <% if (session.role === 'admin') { %>
+                <form method="post" action="/admin/the-hoc-sinh/cap-nhat">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="id" value="<%= r.id %>" />
+                  <input type="hidden" name="hanhDong" value="toggle_day" />
+                  <input type="hidden" name="giaTri" value="<%= r.co_day ? '0' : '1' %>" />
+                  <input type="hidden" name="returnTo" value="<%= returnTo %>" />
+                  <button class="badge <%= r.co_day ? 'badge--success' : 'badge--gray' %>" style="border:none;cursor:pointer" type="submit"><%= r.co_day ? 'Có' : 'Không' %></button>
+                </form>
+                <% } else { %><span class="badge <%= r.co_day ? 'badge--success' : 'badge--gray' %>"><%= r.co_day ? 'Có' : 'Không' %></span><% } %>
+              </td>
+              <td>
+                <% if (session.role === 'admin') { %>
+                <form method="post" action="/admin/the-hoc-sinh/cap-nhat" class="pill-form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="id" value="<%= r.id %>" />
+                  <input type="hidden" name="hanhDong" value="set_trang_thai" />
+                  <input type="hidden" name="returnTo" value="<%= returnTo %>" />
+                  <select name="giaTri" onchange="this.form.submit()">
+                    <option value="dang_tien_hanh" <%= r.trang_thai === 'dang_tien_hanh' ? 'selected' : '' %>>Đang tiến hành</option>
+                    <option value="da_tra" <%= r.trang_thai === 'da_tra' ? 'selected' : '' %>>Đã trả</option>
+                  </select>
+                </form>
+                <% } else { %>
+                  <span class="badge <%= r.trang_thai === 'da_tra' ? 'badge--success' : 'badge--warn' %>"><%= r.trang_thai === 'da_tra' ? 'Đã trả' : 'Đang tiến hành' %></span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (result.rows.length === 0) { %>
+            <tr><td colspan="8" style="text-align:center;color:var(--text-muted)">Chưa có dữ liệu đăng ký thẻ.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px">Tổng <%= result.total %> dòng.</p>
+
+    <h2>Lịch sử tải lên</h2>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Thời gian</th><th>Người tải</th><th>File</th><th>Tổng dòng</th><th>Không khớp mã HS</th></tr></thead>
+        <tbody>
+          <% history.forEach(h => { %>
+            <tr><td><%= h.uploaded_at %></td><td><%= h.nguoi_upload %></td><td><%= h.ten_file %></td><td class="num"><%= h.tong_dong %></td><td class="num"><%= h.so_dong_loi %></td></tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>
