@@ -10,6 +10,12 @@
     <% if (typeof done !== 'undefined' && done) { %>
       <div class="alert alert--success">Đã nhập <b><%= moi %></b> dòng đăng ký mới<% if (Number(trung) > 0) { %>, bỏ qua <b><%= trung %></b> dòng trùng (đã nhập trước đó)<% } %>.</div>
     <% } %>
+    <% if (typeof daXoa !== 'undefined' && daXoa) { %>
+      <div class="alert alert--success">Đã xoá lần tải lên "<%= tenFileDaXoa %>" (<b><%= soDongXoa %></b> dòng), số lượng đã đăng ký liên quan cũng đã được trừ lại tương ứng. Có thể tải lại file đúng lên ngay.</div>
+    <% } %>
+    <% if (typeof xoaLoi !== 'undefined' && xoaLoi) { %>
+      <div class="alert alert--error"><%= xoaLoi %></div>
+    <% } %>
 
     <% if (uploadErrors) { %>
       <div class="alert alert--error">
@@ -84,9 +90,10 @@
     <% } %>
 
     <h2>Lịch sử tải lên</h2>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-6px">Nếu 1 lần tải lên bị nhầm file/nhầm đợt, bấm "Xoá" để xoá toàn bộ dòng của lần đó và trừ lại đúng số lượng đã cộng vào — sau đó có thể tải lại file đúng lên ngay (tránh bị coi là trùng dữ liệu cũ).</p>
     <div class="table-scroll">
       <table class="data-table">
-        <thead><tr><th>Thời gian</th><th>Người tải</th><th>File</th><th>Đợt</th><th>Tổng dòng</th><th>Lỗi</th><th>Bất thường</th></tr></thead>
+        <thead><tr><th>Thời gian</th><th>Người tải</th><th>File</th><th>Đợt</th><th>Tổng dòng</th><th>Lỗi</th><th>Bất thường</th><th></th></tr></thead>
         <tbody>
           <% history.forEach(h => { %>
             <tr>
@@ -97,8 +104,19 @@
               <td class="num"><%= h.tong_dong %></td>
               <td class="num"><%= h.so_dong_loi %></td>
               <td class="num"><%= h.so_dong_bat_thuong %></td>
+              <td>
+                <% if (session.role === 'admin') { %>
+                <form method="post" action="/admin/dang-ky/upload/<%= h.id %>/xoa" class="js-confirm" data-confirm-message='Xoá toàn bộ &quot;<%= h.ten_file %>&quot; (<%= h.tong_dong %> dòng)? Số lượng đã đăng ký liên quan sẽ được trừ lại. Không thể hoàn tác.'>
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button class="btn-sm" type="submit" title="Xoá lần tải lên này">🗑</button>
+                </form>
+                <% } %>
+              </td>
             </tr>
           <% }) %>
+          <% if (history.length === 0) { %>
+            <tr><td colspan="8" style="text-align:center;color:var(--text-muted)">Chưa có lần tải lên nào.</td></tr>
+          <% } %>
         </tbody>
       </table>
     </div>

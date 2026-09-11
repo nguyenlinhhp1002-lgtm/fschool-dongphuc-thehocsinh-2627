@@ -432,6 +432,10 @@ router.get(
       done: req.query.done === '1',
       moi: req.query.moi || 0,
       trung: req.query.trung || 0,
+      daXoa: req.query.daXoa === '1',
+      soDongXoa: req.query.soDongXoa || 0,
+      tenFileDaXoa: req.query.tenFile || '',
+      xoaLoi: req.query.xoaLoi || null,
     });
   })
 );
@@ -516,6 +520,19 @@ router.post(
       filename: pending.filename,
     });
     res.redirect(`/admin/dang-ky/upload?done=1&moi=${result.soDongDaGhi}&trung=${result.soDongTrung}`);
+  })
+);
+
+router.post(
+  '/dang-ky/upload/:id/xoa',
+  requireFullAdmin,
+  verifyCsrfToken,
+  asyncHandler(async (req, res) => {
+    const result = await registrationRepo.deleteRegistrationUpload(req.params.id, req.session.username);
+    if (!result.ok) {
+      return res.redirect(`/admin/dang-ky/upload?xoaLoi=${encodeURIComponent(result.message)}`);
+    }
+    res.redirect(`/admin/dang-ky/upload?daXoa=1&soDongXoa=${result.soDongXoa}&tenFile=${encodeURIComponent(result.tenFile)}`);
   })
 );
 

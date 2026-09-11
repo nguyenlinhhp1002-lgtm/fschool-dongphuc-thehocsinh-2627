@@ -184,6 +184,63 @@ async function getRegistrationUploadHistory() {
   return rs.rows;
 }
 
+/**
+ * Xoa han 1 lan tai file dang ky bi nham (vd sai file, nham dot...) de tai lai file dung.
+ * Truoc khi xoa cac dong (registration_items), phai TRU LAI dung so luong ma lan tai nay da
+ * cong vao student_uniform_summary (chi cac dong tinh_vao_so_lieu=1), khong xoa han dong
+ * summary (de khong mat size/lich su phat da lo trong khi cho phep dot dang ky khac van con
+ * dong gop cho cung ma_hs/code_prefix) - chi giam ve toi thieu 0. Ghi lai audit_log de truy vet.
+ */
+async function deleteRegistrationUpload(uploadId, adminUsername) {
+  const uploadRs = await db.execute({ sql: 'SELECT * FROM registration_uploads WHERE id = ?', args: [uploadId] });
+  const upload = uploadRs.rows[0];
+  if (!upload) return { ok: false, message: 'Không tìm thấy lần tải lên này.' };
+
+  const itemsRs = await db.execute({
+    sql: 'SELECT ma_hs, code_prefix, so_luong FROM registration_items WHERE upload_id = ? AND tinh_vao_so_lieu = 1',
+    args: [uploadId],
+  });
+
+  const aggMap = new Map();
+  for (const r of itemsRs.rows) {
+    const key = `${r.ma_hs}|${r.code_prefix}`;
+    aggMap.set(key, (aggMap.get(key) || 0) + r.so_luong);
+  }
+
+  const auditStatements = [];
+  for (const [key, qty] of aggMap.entries()) {
+    const [maHs, codePrefix] = key.split('|');
+    const summaryRs = await db.execute({
+      sql: 'SELECT so_luong_dang_ky FROM student_uniform_summary WHERE ma_hs = ? AND code_prefix = ?',
+      args: [maHs, codePrefix],
+    });
+    const soLuongCu = summaryRs.rows[0] ? summaryRs.rows[0].so_luong_dang_ky : 0;
+    const soLuongMoi = Math.max(0, soLuongCu - qty);
+    auditStatements.push({
+      sql: `UPDATE student_uniform_summary SET so_luong_dang_ky = ?, updated_at = datetime('now') WHERE ma_hs = ? AND code_prefix = ?`,
+      args: [soLuongMoi, maHs, codePrefix],
+    });
+    auditStatements.push({
+      sql: `INSERT INTO audit_log (bang, khoa_chinh, truong, gia_tri_cu, gia_tri_moi, nguoi_sua)
+            VALUES ('student_uniform_summary', ?, 'so_luong_dang_ky', ?, ?, ?)`,
+      args: [`${maHs}/${codePrefix}`, String(soLuongCu), String(soLuongMoi), `${adminUsername} (xoá lần tải "${upload.ten_file}")`],
+    });
+  }
+  if (auditStatements.length > 0) {
+    await db.batch(auditStatements, 'write');
+  }
+
+  await db.execute({ sql: 'DELETE FROM registration_items WHERE upload_id = ?', args: [uploadId] });
+  await db.execute({ sql: 'DELETE FROM registration_uploads WHERE id = ?', args: [uploadId] });
+  await db.execute({
+    sql: `INSERT INTO audit_log (bang, khoa_chinh, truong, gia_tri_cu, gia_tri_moi, nguoi_sua)
+          VALUES ('registration_uploads', ?, 'deleted', ?, 'deleted', ?)`,
+    args: [String(uploadId), `${upload.ten_file} (${upload.tong_dong} dòng)`, adminUsername],
+  });
+
+  return { ok: true, soDongXoa: itemsRs.rows.length, soMucGiam: aggMap.size, tenFile: upload.ten_file };
+}
+
 /** Danh sach dong dang ky can xu ly thu cong (loi ma hs / loi loai trang phuc / bat thuong), co phan trang. */
 async function getIssueRows({ page = 1, pageSize = 50 } = {}) {
   const where = `trang_thai_dong_bo != 'ok'`;
@@ -288,6 +345,7 @@ module.exports = {
   commitRegistrationImport,
   getMaHsSetForBatch,
   getRegistrationUploadHistory,
+  deleteRegistrationUpload,
   getIssueRows,
   fixRegistrationItem,
   getBatchLabelsForStudent,
