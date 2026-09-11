@@ -164,7 +164,27 @@ const SCHEMA_SQL = `
     ten_file TEXT NOT NULL,
     tong_dong INTEGER NOT NULL DEFAULT 0,
     so_dong_sua_so_luong INTEGER NOT NULL DEFAULT 0,
+    so_dong_can_doi_chieu INTEGER NOT NULL DEFAULT 0,
     uploaded_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  -- So lieu (so luong / dang ky) trong file "DS co size" khac voi du lieu goc tu file dang
+  -- ky ban dau - KHONG tu dong ap dung, chi ghi lai de admin tu doi chieu kiem tra thu cong.
+  -- loai: 'sai_so_luong' (da dang ky nhung SL trong file khac he thong) hoac 'khong_co_dang_ky'
+  -- (file co du lieu cho 1 muc ma hoc sinh chua he dang ky trong file dang ky goc).
+  CREATE TABLE IF NOT EXISTS ds_no_anomalies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    upload_id INTEGER REFERENCES ds_no_uploads(id),
+    ma_hs TEXT NOT NULL,
+    code_prefix TEXT NOT NULL,
+    loai TEXT NOT NULL CHECK (loai IN ('sai_so_luong', 'khong_co_dang_ky')),
+    so_luong_he_thong INTEGER,
+    so_luong_file INTEGER,
+    size_file TEXT,
+    da_kiem_tra INTEGER NOT NULL DEFAULT 0,
+    nguoi_kiem_tra TEXT,
+    kiem_tra_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
   CREATE TABLE IF NOT EXISTS audit_log (
@@ -212,6 +232,7 @@ const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS idx_summary_code ON student_uniform_summary(code_prefix);
   CREATE INDEX IF NOT EXISTS idx_alias_norm ON category_aliases(ten_goc_norm);
   CREATE INDEX IF NOT EXISTS idx_card_items_ma_hs ON card_registration_items(ma_hs);
+  CREATE INDEX IF NOT EXISTS idx_ds_no_anomalies_status ON ds_no_anomalies(da_kiem_tra);
 `;
 
 // Cac cot them sau khi da co du lieu thuc te - dung ALTER TABLE vi CREATE TABLE IF NOT
@@ -219,6 +240,7 @@ const SCHEMA_SQL = `
 const COLUMN_MIGRATIONS = [
   { table: 'students', column: 'gioi_tinh', definition: 'TEXT' },
   { table: 'uniform_categories', column: 'size_group_code', definition: 'TEXT REFERENCES size_groups(code)' },
+  { table: 'ds_no_uploads', column: 'so_dong_can_doi_chieu', definition: 'INTEGER NOT NULL DEFAULT 0' },
 ];
 
 async function addColumnIfMissing(table, column, definition) {

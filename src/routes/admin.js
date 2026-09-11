@@ -708,9 +708,14 @@ router.post(
       throw err;
     }
 
-    const changes = await dsNoImport.tinhChenhLechSoLuong(parsed.rows);
+    const { saiSoLuong, khongCoDangKy } = await dsNoImport.phanLoaiDoiChieu(parsed.rows);
     const soOCoSize = dsNoImport.demSoOCoSize(parsed.rows);
-    const token = pendingStore.put('dsNo', { rows: parsed.rows, filename: req.file.originalname, changes });
+    const token = pendingStore.put('dsNo', {
+      rows: parsed.rows,
+      filename: req.file.originalname,
+      saiSoLuong,
+      khongCoDangKy,
+    });
 
     const [lopKhoiList, history, batches] = await Promise.all([
       studentsRepo.getDistinctLopKhoi(),
@@ -729,9 +734,10 @@ router.post(
         token,
         filename: req.file.originalname,
         tongDong: parsed.rows.length,
-        changes: changes.slice(0, 30),
-        soThayDoi: changes.length,
         soOCoSize,
+        saiSoLuong: saiSoLuong.slice(0, 30),
+        khongCoDangKy: khongCoDangKy.slice(0, 30),
+        soCanDoiChieu: saiSoLuong.length + khongCoDangKy.length,
       },
     });
   })
@@ -749,15 +755,42 @@ router.post(
         message: 'Dữ liệu xem trước đã hết hạn (quá 30 phút) hoặc đã được xác nhận trước đó. Vui lòng tải file lên lại.',
       });
     }
-    await dsNoImport.commitDsNoImport({ rows: pending.rows, adminUsername: req.session.username });
-    await dsNoImport.ghiAuditSoLuong(pending.changes, req.session.username);
-    await dsNoImport.logDsNoUpload({
+    const skipKeys = dsNoImport.taoTapKhoaBoQua({ saiSoLuong: pending.saiSoLuong, khongCoDangKy: pending.khongCoDangKy });
+    await dsNoImport.commitDsNoImport({ rows: pending.rows, adminUsername: req.session.username, skipKeys });
+    const soCanDoiChieu = pending.saiSoLuong.length + pending.khongCoDangKy.length;
+    const uploadId = await dsNoImport.logDsNoUpload({
       adminUsername: req.session.username,
       filename: pending.filename,
       tongDong: pending.rows.length,
-      soDongSuaSoLuong: pending.changes.length,
+      soDongCanDoiChieu: soCanDoiChieu,
     });
+    await dsNoImport.ghiNhanBatThuong({ saiSoLuong: pending.saiSoLuong, khongCoDangKy: pending.khongCoDangKy }, uploadId);
     res.redirect('/admin/ds-no?ok=1');
+  })
+);
+
+// ---------- DS no: cac dong bat thuong can admin tu doi chieu (khong tu dong xu ly) ----------
+
+router.get(
+  '/ds-no/doi-chieu',
+  asyncHandler(async (req, res) => {
+    const anomalies = await dsNoImport.getDsNoAnomalies({ page: Number(req.query.page) || 1, pageSize: 50 });
+    res.render('admin/ds-no-doi-chieu', {
+      ...baseLocals(req),
+      pageTitle: 'DS có size — Cần đối chiếu',
+      activeNav: 'ds-no-doi-chieu',
+      anomalies,
+    });
+  })
+);
+
+router.post(
+  '/ds-no/doi-chieu/:id/danh-dau',
+  requireFullAdmin,
+  verifyCsrfToken,
+  asyncHandler(async (req, res) => {
+    await dsNoImport.markDsNoAnomalyChecked(req.params.id, req.session.username);
+    res.redirect(`/admin/ds-no/doi-chieu${toQueryString({ page: req.query.page })}`);
   })
 );
 

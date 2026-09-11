@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>DS có size — Cần đối chiếu</h1>
+    <p class="admin-main__desc">Danh sách học sinh &amp; số lượng đăng ký chỉ được ghi nhận từ file "Tải file đăng ký" ban đầu. Các dòng dưới đây trong file "DS có size" (tải xuống điền size rồi tải lên lại) có chênh lệch so với dữ liệu gốc đó — hệ thống <b>không tự động áp dụng</b>, cần admin tự kiểm tra lại (đối chiếu với file đăng ký gốc, hoặc hỏi lại người điền) rồi mới quyết định sửa thủ công tại trang <a href="/admin/dang-ky">Đăng ký &amp; phát đồ</a> nếu cần. Bấm "Đã kiểm tra" chỉ để đánh dấu đã xem xét xong, không tự thay đổi dữ liệu nào.</p>
+
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr><th>Thời gian</th><th>Mã HS</th><th>Họ tên</th><th>Lớp</th><th>Loại</th><th>Vấn đề</th><th>SL đã đăng ký (gốc)</th><th>SL trong file</th><th>Size trong file</th><th></th></tr>
+        </thead>
+        <tbody>
+          <% anomalies.rows.forEach(r => { %>
+            <tr>
+              <td><%= r.created_at %></td>
+              <td><%= r.ma_hs %></td>
+              <td><%= r.ho_ten || '—' %></td>
+              <td><%= r.lop || '' %></td>
+              <td><%= r.code_prefix %></td>
+              <td>
+                <% if (r.loai === 'sai_so_luong') { %><span class="badge badge--warn">Sai số lượng</span><% } %>
+                <% if (r.loai === 'khong_co_dang_ky') { %><span class="badge badge--danger">Chưa đăng ký gốc</span><% } %>
+              </td>
+              <td class="num"><%= r.so_luong_he_thong === null ? '—' : r.so_luong_he_thong %></td>
+              <td class="num"><%= r.so_luong_file === null ? '' : r.so_luong_file %></td>
+              <td><%= r.size_file || '' %></td>
+              <td>
+                <% if (session.role === 'admin') { %>
+                <form method="post" action="/admin/ds-no/doi-chieu/<%= r.id %>/danh-dau" class="js-confirm" data-confirm-message="Xác nhận đã kiểm tra/đối chiếu xong dòng này? (không tự sửa dữ liệu gì)">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button class="btn btn-outline btn-sm" type="submit">Đã kiểm tra</button>
+                </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (anomalies.rows.length === 0) { %>
+            <tr><td colspan="10" style="text-align:center;color:var(--text-muted)">Không có dòng nào cần đối chiếu 🎉</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px">Tổng <%= anomalies.total %> dòng cần đối chiếu.</p>
+  </main>
+</body>
+</html>

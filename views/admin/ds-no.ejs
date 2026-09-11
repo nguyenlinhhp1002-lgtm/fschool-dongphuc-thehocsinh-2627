@@ -42,26 +42,44 @@
     <% if (preview) { %>
       <div class="card">
         <h2 style="margin-top:0">2. Xem trước — <%= preview.filename %></h2>
+        <p style="font-size:0.82rem; color:var(--text-muted)">Danh sách học sinh &amp; số lượng đăng ký chỉ được ghi nhận từ file "Tải file đăng ký" ban đầu. File này chỉ dùng để cập nhật <b>size</b> — số lượng trong file sẽ KHÔNG được dùng để ghi đè hệ thống.</p>
         <div class="diff-summary">
           <div class="item"><b><%= preview.tongDong %></b>Tổng số dòng đọc được</div>
           <div class="item"><b style="color:var(--success)"><%= preview.soOCoSize %></b>Ô size đọc được, sẽ được ghi nhận</div>
-          <div class="item"><b style="color:var(--warn)"><%= preview.soThayDoi %></b>Số lượng bị sửa khác hệ thống hiện có</div>
+          <div class="item"><b style="color:var(--danger)"><%= preview.soCanDoiChieu %></b>Dòng bất thường, sẽ KHÔNG ghi nhận (cần đối chiếu)</div>
         </div>
         <% if (preview.soOCoSize === 0) { %>
           <div class="alert alert--warn">File này không có ô size nào được điền — nếu bạn đã điền size trong file, kiểm tra lại đúng cột (vd "Size chung", "Size Quần váy/Chân váy"...) và đúng tên cột như file mẫu mới nhất.</div>
         <% } %>
-        <% if (preview.changes.length > 0) { %>
+        <% if (preview.saiSoLuong.length > 0) { %>
+          <div class="alert alert--error">
+            <b><%= preview.saiSoLuong.length %> dòng có số lượng trong file khác với số lượng đã đăng ký gốc</b> — các dòng này (kể cả size) sẽ KHÔNG được ghi nhận, cần admin tự đối chiếu kiểm tra lại (xem tại "Cần đối chiếu" sau khi xác nhận).
+          </div>
           <div class="table-scroll">
             <table class="data-table">
-              <thead><tr><th>Mã HS</th><th>Loại</th><th>SL cũ</th><th>SL mới (trong file)</th></tr></thead>
+              <thead><tr><th>Mã HS</th><th>Loại</th><th>SL đã đăng ký (gốc)</th><th>SL trong file</th><th>Size trong file</th></tr></thead>
               <tbody>
-                <% preview.changes.forEach(c => { %>
-                  <tr><td><%= c.maHs %></td><td><%= c.codePrefix %></td><td class="num"><%= c.soLuongCu %></td><td class="num"><b><%= c.soLuongMoi %></b></td></tr>
+                <% preview.saiSoLuong.forEach(c => { %>
+                  <tr><td><%= c.maHs %></td><td><%= c.codePrefix %></td><td class="num"><%= c.soLuongHeThong %></td><td class="num"><b><%= c.soLuongFile %></b></td><td><%= c.sizeFile || '' %></td></tr>
                 <% }) %>
               </tbody>
             </table>
           </div>
-          <p style="font-size:0.78rem;color:var(--text-muted)">Số lượng trong file sẽ ghi đè số lượng hệ thống đang lưu (vd do hoàn tiền/huỷ đơn), có ghi lại lịch sử thay đổi.</p>
+        <% } %>
+        <% if (preview.khongCoDangKy.length > 0) { %>
+          <div class="alert alert--error">
+            <b><%= preview.khongCoDangKy.length %> dòng có dữ liệu cho mục học sinh CHƯA đăng ký gốc</b> — có thể do thêm nhầm dòng/cột khi điền file. Các dòng này sẽ KHÔNG được ghi nhận, cần admin tự kiểm tra lại (xem tại "Cần đối chiếu" sau khi xác nhận).
+          </div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>Mã HS</th><th>Loại</th><th>SL trong file</th><th>Size trong file</th></tr></thead>
+              <tbody>
+                <% preview.khongCoDangKy.forEach(c => { %>
+                  <tr><td><%= c.maHs %></td><td><%= c.codePrefix %></td><td class="num"><%= c.soLuongFile === null ? '' : c.soLuongFile %></td><td><%= c.sizeFile || '' %></td></tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
         <% } %>
         <form method="post" action="/admin/ds-no/upload/confirm" style="margin-top:10px">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
@@ -86,10 +104,10 @@
     <h2>Lịch sử tải lên DS đăng ký có size</h2>
     <div class="table-scroll">
       <table class="data-table">
-        <thead><tr><th>Thời gian</th><th>Người tải</th><th>File</th><th>Tổng dòng</th><th>Số dòng sửa SL</th></tr></thead>
+        <thead><tr><th>Thời gian</th><th>Người tải</th><th>File</th><th>Tổng dòng</th><th>Số dòng cần đối chiếu</th></tr></thead>
         <tbody>
           <% history.forEach(h => { %>
-            <tr><td><%= h.uploaded_at %></td><td><%= h.nguoi_upload %></td><td><%= h.ten_file %></td><td class="num"><%= h.tong_dong %></td><td class="num"><%= h.so_dong_sua_so_luong %></td></tr>
+            <tr><td><%= h.uploaded_at %></td><td><%= h.nguoi_upload %></td><td><%= h.ten_file %></td><td class="num"><%= h.tong_dong %></td><td class="num"><%= h.so_dong_can_doi_chieu %></td></tr>
           <% }) %>
         </tbody>
       </table>
