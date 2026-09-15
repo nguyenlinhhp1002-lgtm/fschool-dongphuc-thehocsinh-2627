@@ -116,6 +116,30 @@
     },
     true
   );
+
+  // Form co class "js-require-note" BAT BUOC nhap 1 ly do (qua prompt()) truoc khi gui - dien
+  // gia tri vao input [name="lyDo"] cua chinh form do. Neu huy hoac de trong thi CHAN han viec
+  // gui (ca submit thuong lan js-inline-form o tren) bang stopImmediatePropagation - vi listener
+  // nay chay o pha capture (truoc handleSubmit o pha bubble), can chan tuyet doi de khong bi
+  // handleSubmit "vuot qua" va van gui AJAX du form da bi preventDefault.
+  document.addEventListener(
+    'submit',
+    (e) => {
+      const form = e.target;
+      if (!(form instanceof HTMLFormElement) || !form.classList.contains('js-require-note')) return;
+      const lyDoInput = form.querySelector('[name="lyDo"]');
+      const message = form.dataset.noteMessage || 'Vui lòng nhập lý do:';
+      const note = window.prompt(message, '');
+      if (note === null || !note.trim()) {
+        if (note !== null) alert('Phải nhập lý do mới lưu được.');
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
+      if (lyDoInput) lyDoInput.value = note.trim();
+    },
+    true
+  );
 })();
 
 /**

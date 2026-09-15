@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head><%- include('../partials/head', { pageTitle }) %></head>
+<body class="admin-page">
+  <%- include('../partials/adminNav', { session, activeNav }) %>
+  <main class="admin-main">
+    <h1>Lịch sử sửa SL</h1>
+    <p class="admin-main__desc">Ghi lại mọi lần admin sửa tay cột "SL" trên trang "Đăng ký &amp; phát đồ" — mỗi lần sửa đều bắt buộc có lý do. Không tính các lần cộng dồn tự động khi nhập file đăng ký.</p>
+
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Thời gian</th><th>Mã HS</th><th>Họ tên</th><th>Lớp</th><th>Loại</th><th>SL cũ</th><th>SL mới</th><th>Lý do</th><th>Người sửa</th></tr></thead>
+        <tbody>
+          <% history.rows.forEach(h => { %>
+            <tr>
+              <td><%= h.thoi_gian %></td>
+              <td><%= h.ma_hs %></td>
+              <td><%= h.ho_ten || '' %></td>
+              <td><%= h.lop || '' %></td>
+              <td><%= h.ten_hien_thi || h.code_prefix %></td>
+              <td class="num"><%= h.so_luong_cu %></td>
+              <td class="num"><b><%= h.so_luong_moi %></b></td>
+              <td><%= h.ly_do %></td>
+              <td><%= h.nguoi_sua || '' %></td>
+            </tr>
+          <% }) %>
+          <% if (history.rows.length === 0) { %>
+            <tr><td colspan="9" style="text-align:center;color:var(--text-muted)">Chưa có lần sửa SL nào.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px">Tổng <%= history.total %> lần sửa (hiển thị tối đa 50 lần gần nhất).</p>
+  </main>
+</body>
+</html>

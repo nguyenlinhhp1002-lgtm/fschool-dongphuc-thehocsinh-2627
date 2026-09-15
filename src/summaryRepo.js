@@ -97,6 +97,60 @@ async function upsertSizeAndMaybeQuantity({ maHs, codePrefix, size, soLuongMoi, 
 }
 
 /**
+ * Sua tay cot "SL" (so_luong_dang_ky) tren trang "Dang ky & phat do" - danh cho truong hop
+ * can dieu chinh 1 dong da dang ky (VD sua sai luc nhap file, hoac theo yeu cau thuc te).
+ * BAT BUOC co ly do (kiem tra o day, khong chi tin popup phia client) - moi lan sua THUC SU
+ * thay doi gia tri deu ghi lai vao quantity_change_log (xem tab rieng "Lich su sua SL").
+ * Dung UPDATE (khong INSERT dong moi) - chi ap dung cho dong da co san, khop voi cach giao
+ * dien chi hien nut sua khi o SL dang > 0 (khong the "tao moi" 1 dang ky qua duong nay).
+ */
+async function updateQuantityDangKy({ maHs, codePrefix, soLuongMoi, lyDo, adminUsername }) {
+  const trimmedLyDo = String(lyDo || '').trim();
+  if (!trimmedLyDo) {
+    throw new Error('Vui lòng nhập lý do khi sửa số lượng.');
+  }
+
+  const existingRs = await db.execute({
+    sql: 'SELECT so_luong_dang_ky FROM student_uniform_summary WHERE ma_hs = ? AND code_prefix = ?',
+    args: [maHs, codePrefix],
+  });
+  const soLuongCu = existingRs.rows[0] ? existingRs.rows[0].so_luong_dang_ky : 0;
+  const soLuong = Math.max(0, Math.trunc(Number(soLuongMoi)) || 0);
+  if (soLuong === soLuongCu) return false;
+
+  await db.execute({
+    sql: `UPDATE student_uniform_summary SET so_luong_dang_ky = ?, updated_at = datetime('now')
+          WHERE ma_hs = ? AND code_prefix = ?`,
+    args: [soLuong, maHs, codePrefix],
+  });
+
+  await db.execute({
+    sql: `INSERT INTO quantity_change_log (ma_hs, code_prefix, so_luong_cu, so_luong_moi, ly_do, nguoi_sua)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [maHs, codePrefix, soLuongCu, soLuong, trimmedLyDo, adminUsername || null],
+  });
+
+  return true;
+}
+
+/** Lich su sua SL toan truong (moi nhat truoc), dung cho tab rieng "Lich su sua SL". */
+async function getQuantityChangeHistory({ page = 1, pageSize = 50 } = {}) {
+  const countRs = await db.execute('SELECT COUNT(*) AS c FROM quantity_change_log');
+  const total = Number(countRs.rows[0].c);
+  const offset = (page - 1) * pageSize;
+  const rs = await db.execute({
+    sql: `SELECT q.*, s.ho_ten, s.lop, uc.ten_hien_thi
+          FROM quantity_change_log q
+          LEFT JOIN students s ON s.ma_hs = q.ma_hs
+          LEFT JOIN uniform_categories uc ON uc.code_prefix = q.code_prefix
+          ORDER BY q.thoi_gian DESC, q.id DESC
+          LIMIT ? OFFSET ?`,
+    args: [pageSize, offset],
+  });
+  return { rows: rs.rows, total, page, pageSize };
+}
+
+/**
  * Neu loai trang phuc nay thuoc 1 size_group (vd "Size chung" dung cho Ao polo/Quan sooc/
  * Ao khoac/The thao), dong bo lai size vua luu sang cac loai khac CUNG NHOM cua hoc sinh nay
  * (chi cap nhat dong da co san - hoc sinh chua dang ky loai do thi khong tao dong moi).
@@ -150,6 +204,8 @@ module.exports = {
   getAllMeasurementsMap,
   getStudentIdsWithRegistrations,
   upsertSizeAndMaybeQuantity,
+  updateQuantityDangKy,
+  getQuantityChangeHistory,
   upsertMeasurements,
   countStudentsMissingSize,
 };

@@ -587,6 +587,7 @@ router.get(
       categories,
       lopKhoiList,
       filters: { q, lop, khoi },
+      loiSl: req.query.loiSl || null,
     });
   })
 );
@@ -622,8 +623,41 @@ router.post(
         adminUsername: req.session.username,
       });
       if (isAjax) return res.json({ ok: true });
+    } else if (hanhDong === 'set_so_luong') {
+      try {
+        await summaryRepo.updateQuantityDangKy({
+          maHs,
+          codePrefix,
+          soLuongMoi: giaTri,
+          lyDo: req.body.lyDo,
+          adminUsername: req.session.username,
+        });
+      } catch (err) {
+        if (isAjax) return res.status(400).json({ ok: false, message: err.message });
+        return res.redirect(
+          `${returnTo && returnTo.startsWith('/admin/dang-ky') ? returnTo : '/admin/dang-ky'}${
+            (returnTo || '/admin/dang-ky').includes('?') ? '&' : '?'
+          }loiSl=${encodeURIComponent(err.message)}`
+        );
+      }
+      if (isAjax) return res.json({ ok: true });
     }
     res.redirect(returnTo && returnTo.startsWith('/admin/dang-ky') ? returnTo : '/admin/dang-ky');
+  })
+);
+
+// ---------- Lich su sua SL (so luong dang ky), tab rieng ----------
+
+router.get(
+  '/dang-ky/lich-su-sl',
+  asyncHandler(async (req, res) => {
+    const history = await summaryRepo.getQuantityChangeHistory({ page: Number(req.query.page) || 1, pageSize: 50 });
+    res.render('admin/quantity-history', {
+      ...baseLocals(req),
+      pageTitle: 'Lịch sử sửa SL',
+      activeNav: 'quantity-history',
+      history,
+    });
   })
 );
 

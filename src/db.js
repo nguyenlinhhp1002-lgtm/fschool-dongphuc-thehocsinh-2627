@@ -198,6 +198,20 @@ const SCHEMA_SQL = `
     thoi_gian TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  -- Lich su admin sua tay cot "SL" (so_luong_dang_ky) tren trang "Dang ky & phat do" - BAT
+  -- BUOC co ly do cho MOI lan sua (khac audit_log chung, chi ghi gia tri cu/moi khong co ly
+  -- do). Xem tab rieng "Lich su sua SL".
+  CREATE TABLE IF NOT EXISTS quantity_change_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ma_hs TEXT NOT NULL,
+    code_prefix TEXT NOT NULL,
+    so_luong_cu INTEGER NOT NULL,
+    so_luong_moi INTEGER NOT NULL,
+    ly_do TEXT NOT NULL,
+    nguoi_sua TEXT,
+    thoi_gian TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   -- Lich su upload file dang ky the hoc sinh
   CREATE TABLE IF NOT EXISTS card_uploads (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -233,6 +247,7 @@ const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS idx_alias_norm ON category_aliases(ten_goc_norm);
   CREATE INDEX IF NOT EXISTS idx_card_items_ma_hs ON card_registration_items(ma_hs);
   CREATE INDEX IF NOT EXISTS idx_ds_no_anomalies_status ON ds_no_anomalies(da_kiem_tra);
+  CREATE INDEX IF NOT EXISTS idx_qty_change_ma_hs ON quantity_change_log(ma_hs);
 `;
 
 // Cac cot them sau khi da co du lieu thuc te - dung ALTER TABLE vi CREATE TABLE IF NOT

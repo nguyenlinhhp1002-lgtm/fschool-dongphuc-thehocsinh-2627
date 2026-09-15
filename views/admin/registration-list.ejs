@@ -12,7 +12,11 @@
   <%- include('../partials/adminNav', { session, activeNav }) %>
   <main class="admin-main">
     <h1>Danh sách đăng ký &amp; phát đồ</h1>
-    <p class="admin-main__desc">Bố cục theo định dạng "DS đăng ký có size". Bấm vào nút trạng thái để đánh dấu đã phát/chưa phát; sửa size trực tiếp trong ô rồi bấm 💾.</p>
+    <p class="admin-main__desc">Bố cục theo định dạng "DS đăng ký có size". Bấm vào nút trạng thái để đánh dấu đã phát/chưa phát; sửa size trực tiếp trong ô rồi bấm 💾. Sửa SL cần nhập lý do (popup hiện lên khi bấm 💾), mọi lần sửa đều được lưu lại tại <a href="/admin/dang-ky/lich-su-sl">Lịch sử sửa SL</a>.</p>
+
+    <% if (typeof loiSl !== 'undefined' && loiSl) { %>
+      <div class="alert alert--error"><%= loiSl %></div>
+    <% } %>
 
     <form method="get" class="form-row">
       <div class="form-field"><label>Tìm mã HS / tên</label><input type="text" name="q" value="<%= filters.q %>" /></div>
@@ -75,7 +79,21 @@
                 <% if (cell.soLuong === 0) { %>
                   <td colspan="<%= cell.coSize ? 3 : 2 %>" style="color:var(--border-soft); text-align:center">–</td>
                 <% } else { %>
-                  <td class="num"><%= cell.soLuong %></td>
+                  <td class="num">
+                    <% if (session.role === 'admin') { %>
+                    <form method="post" action="/admin/dang-ky/cap-nhat" class="pill-form js-require-note"
+                          data-note-message="Nhập lý do sửa số lượng đăng ký (bắt buộc):">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                      <input type="hidden" name="maHs" value="<%= r.student.ma_hs %>" />
+                      <input type="hidden" name="codePrefix" value="<%= cell.codePrefix %>" />
+                      <input type="hidden" name="hanhDong" value="set_so_luong" />
+                      <input type="hidden" name="returnTo" value="<%= returnTo %>" />
+                      <input type="hidden" name="lyDo" value="" />
+                      <input type="number" name="giaTri" value="<%= cell.soLuong %>" min="0" style="width:52px" />
+                      <button class="btn-sm" type="submit" title="Sửa số lượng (bắt buộc ghi lý do, có lưu lịch sử)">💾</button>
+                    </form>
+                    <% } else { %><%= cell.soLuong %><% } %>
+                  </td>
                   <% if (cell.coSize) { %>
                     <td>
                       <% if (session.role === 'admin') { %>
