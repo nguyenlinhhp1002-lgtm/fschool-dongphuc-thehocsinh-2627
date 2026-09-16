@@ -577,6 +577,13 @@ table.data-table thead th.sticky-col {
   z-index: 3;
 }
 
+/* Bang dai (nhieu hoc sinh) - gioi han chieu cao de thanh cuon ngang luon nam trong vung
+   nhin thay duoc (khong phai cuon het ca trang xuong day moi thay). */
+.table-scroll--tall {
+  max-height: 72vh;
+  overflow-y: auto;
+}
+
 .badge {
   display: inline-block;
   padding: 3px 9px;
@@ -590,12 +597,23 @@ table.data-table thead th.sticky-col {
 .badge--success { background: var(--success-bg); color: var(--success); }
 
 .pill-form { display: inline-flex; align-items: center; gap: 4px; }
-.pill-form input[type="text"] {
+.pill-form input[type="text"],
+.pill-form input[type="number"] {
   width: 64px;
   padding: 3px 6px;
   border-radius: 6px;
   border: 1.5px solid var(--border-soft);
   font-size: 0.78rem;
+}
+/* An mui ten tang/giam mac dinh cua input number (Chrome/Safari + Firefox) - cot "SL" can
+   gon giong het cot "Size" ben canh, mui ten lam no rong/lech hon can thiet. */
+.pill-form input[type="number"]::-webkit-outer-spin-button,
+.pill-form input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.pill-form input[type="number"] {
+  -moz-appearance: textfield;
 }
 .pill-form select {
   padding: 3px 4px;

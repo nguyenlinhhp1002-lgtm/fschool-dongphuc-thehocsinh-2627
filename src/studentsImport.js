@@ -111,4 +111,4 @@ async function parseStudentsExcelBuffer(buffer, tenSheetChiDinh) {
   return { students, sheetName: sheet.name, sheetNames };
 }
 
-module.exports = { parseStudentsExcelBuffer, REQUIRED_COLUMNS, suyRaKhoi };
+module.exports = { parseStudentsExcelBuffer, REQUIRED_COLUMNS, OPTIONAL_COLUMNS, suyRaKhoi };

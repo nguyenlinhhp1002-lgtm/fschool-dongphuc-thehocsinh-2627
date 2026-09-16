@@ -76,6 +76,7 @@
       </div>
     <% } else if (session.role === 'admin') { %>
       <div class="card">
+        <p style="margin:0 0 10px"><a class="btn btn-outline btn-sm" href="/admin/dang-ky/upload/mau.xlsx">⭳ Tải file mẫu</a></p>
         <form method="post" action="/admin/dang-ky/upload" enctype="multipart/form-data">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <div class="form-row">

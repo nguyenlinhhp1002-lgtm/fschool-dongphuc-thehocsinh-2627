@@ -91,6 +91,7 @@
     <% } else if (session.role === 'admin') { %>
       <div class="card">
         <h2 style="margin-top:0">2. Tải file đã điền lên lại</h2>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin:0 0 10px">Dùng đúng file vừa tải xuống ở bước 1 phía trên làm mẫu (đã có sẵn đúng cột, đúng dữ liệu hiện tại) — chỉ điền thêm số đo/size rồi tải lại, không đổi tên/thêm bớt cột.</p>
         <form method="post" action="/admin/ds-no/upload" enctype="multipart/form-data">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <div class="form-row">

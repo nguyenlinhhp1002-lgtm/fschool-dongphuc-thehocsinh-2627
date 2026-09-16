@@ -37,6 +37,7 @@
     <% } else if (session.role === 'admin') { %>
       <div class="card">
         <h2 style="margin-top:0">Tải lên / cập nhật danh sách</h2>
+        <p style="margin:0 0 10px"><a class="btn btn-outline btn-sm" href="/admin/hoc-sinh/upload/mau.xlsx">⭳ Tải file mẫu</a></p>
         <form method="post" action="/admin/hoc-sinh/upload" enctype="multipart/form-data">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <div class="form-row">

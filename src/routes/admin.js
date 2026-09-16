@@ -36,13 +36,17 @@ const asyncHandler = require('../asyncHandler');
 const pendingStore = require('../pendingStore');
 const { ExcelValidationError } = require('../excelHelpers');
 
-const { parseStudentsExcelBuffer } = require('../studentsImport');
+const { parseStudentsExcelBuffer, REQUIRED_COLUMNS: ROSTER_REQUIRED_COLUMNS, OPTIONAL_COLUMNS: ROSTER_OPTIONAL_COLUMNS } = require('../studentsImport');
 const studentsRepo = require('../studentsRepo');
 
 const categoriesRepo = require('../categoriesRepo');
 const batchesRepo = require('../batchesRepo');
 
-const { parseRegistrationExcelBuffer } = require('../registrationImport');
+const {
+  parseRegistrationExcelBuffer,
+  REQUIRED_COLUMNS: REGISTRATION_REQUIRED_COLUMNS,
+  OPTIONAL_COLUMNS: REGISTRATION_OPTIONAL_COLUMNS,
+} = require('../registrationImport');
 const registrationRepo = require('../registrationRepo');
 
 const summaryRepo = require('../summaryRepo');
@@ -54,12 +58,16 @@ const dsNoImport = require('../dsNoImport');
 const reportsRepo = require('../reportsRepo');
 const { buildSimpleXlsx } = require('../exportXlsx');
 
-const { parseCardExcelBuffer } = require('../cardImport');
+const {
+  parseCardExcelBuffer,
+  REQUIRED_COLUMNS: CARD_REQUIRED_COLUMNS,
+  OPTIONAL_COLUMNS: CARD_OPTIONAL_COLUMNS,
+} = require('../cardImport');
 const cardRepo = require('../cardRepo');
 
 const { buildRegistrationRows } = require('../registrationTable');
 
-const { parseClassAccountsBuffer } = require('../classAccountImport');
+const { parseClassAccountsBuffer, REQUIRED_COLUMNS: CLASS_ACCOUNT_REQUIRED_COLUMNS } = require('../classAccountImport');
 const classAccountsRepo = require('../classAccountsRepo');
 const traCuuAccountRepo = require('../traCuuAccountRepo');
 
@@ -205,6 +213,18 @@ router.get(
       preview: null,
       ok: req.query.ok === '1',
     });
+  })
+);
+
+router.get(
+  '/hoc-sinh/upload/mau.xlsx',
+  asyncHandler(async (req, res) => {
+    const buffer = await buildSimpleXlsx('DS toàn trường', [...ROSTER_REQUIRED_COLUMNS, ...ROSTER_OPTIONAL_COLUMNS], [
+      ['FHP00001', 'Nguyễn Văn A', '10A1', 'Đang học', 'Nam'],
+    ]);
+    res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.set('Content-Disposition', 'attachment; filename="Mau DS hoc sinh toan truong.xlsx"');
+    res.send(Buffer.from(buffer));
   })
 );
 
@@ -437,6 +457,18 @@ router.get(
       tenFileDaXoa: req.query.tenFile || '',
       xoaLoi: req.query.xoaLoi || null,
     });
+  })
+);
+
+router.get(
+  '/dang-ky/upload/mau.xlsx',
+  asyncHandler(async (req, res) => {
+    const buffer = await buildSimpleXlsx('DS đăng ký', [...REGISTRATION_REQUIRED_COLUMNS, ...REGISTRATION_OPTIONAL_COLUMNS], [
+      ['FHP00001', 'Áo polo', 1, 'Thanh toán', 'Nguyễn Văn A', 'a@example.com', 'M', 150000, 150000, '01/09/2026', '9', 'Đợt 1'],
+    ]);
+    res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.set('Content-Disposition', 'attachment; filename="Mau file dang ky.xlsx"');
+    res.send(Buffer.from(buffer));
   })
 );
 
@@ -999,6 +1031,18 @@ router.get(
   })
 );
 
+router.get(
+  '/the-hoc-sinh/upload/mau.xlsx',
+  asyncHandler(async (req, res) => {
+    const buffer = await buildSimpleXlsx('DS the hoc sinh', [...CARD_REQUIRED_COLUMNS, ...CARD_OPTIONAL_COLUMNS], [
+      ['FHP00001', 50000, 'Nguyễn Văn A', '01/09/2026', 'Đợt 1'],
+    ]);
+    res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.set('Content-Disposition', 'attachment; filename="Mau DS the hoc sinh.xlsx"');
+    res.send(Buffer.from(buffer));
+  })
+);
+
 router.post(
   '/the-hoc-sinh/upload',
   requireFullAdmin,
@@ -1129,6 +1173,19 @@ router.get(
       soTao: req.query.soTao || 0,
       soCapNhat: req.query.soCapNhat || 0,
     });
+  })
+);
+
+router.get(
+  '/tai-khoan-lop/mau.xlsx',
+  requireFullAdmin,
+  asyncHandler(async (req, res) => {
+    const buffer = await buildSimpleXlsx('DS tai khoan lop', CLASS_ACCOUNT_REQUIRED_COLUMNS, [
+      ['10A1', 'gvcn10a1', 'doi_mat_khau_nay_123'],
+    ]);
+    res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.set('Content-Disposition', 'attachment; filename="Mau DS tai khoan lop.xlsx"');
+    res.send(Buffer.from(buffer));
   })
 );
 

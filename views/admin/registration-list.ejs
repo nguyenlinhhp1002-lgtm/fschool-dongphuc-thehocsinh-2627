@@ -56,7 +56,7 @@
     </div>
     <% } %>
 
-    <div class="table-scroll">
+    <div class="table-scroll table-scroll--tall">
       <table class="data-table">
         <thead>
           <tr>
@@ -89,7 +89,7 @@
                       <input type="hidden" name="hanhDong" value="set_so_luong" />
                       <input type="hidden" name="returnTo" value="<%= returnTo %>" />
                       <input type="hidden" name="lyDo" value="" />
-                      <input type="number" name="giaTri" value="<%= cell.soLuong %>" min="0" style="width:52px" />
+                      <input type="number" name="giaTri" value="<%= cell.soLuong %>" min="0" />
                       <button class="btn-sm" type="submit" title="Sửa số lượng (bắt buộc ghi lý do, có lưu lịch sử)">💾</button>
                     </form>
                     <% } else { %><%= cell.soLuong %><% } %>

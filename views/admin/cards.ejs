@@ -54,6 +54,7 @@
     <% } else if (session.role === 'admin') { %>
       <div class="card">
         <h2 style="margin-top:0">Tải lên file đăng ký thẻ học sinh</h2>
+        <p style="margin:0 0 10px"><a class="btn btn-outline btn-sm" href="/admin/the-hoc-sinh/upload/mau.xlsx">⭳ Tải file mẫu</a></p>
         <form method="post" action="/admin/the-hoc-sinh/upload" enctype="multipart/form-data">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <div class="form-row">

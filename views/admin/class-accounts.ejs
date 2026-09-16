@@ -31,6 +31,7 @@
     <% } else { %>
       <div class="card">
         <h2 style="margin-top:0">Tải lên file danh sách tài khoản</h2>
+        <p style="margin:0 0 10px"><a class="btn btn-outline btn-sm" href="/admin/tai-khoan-lop/mau.xlsx">⭳ Tải file mẫu</a></p>
         <form method="post" action="/admin/tai-khoan-lop/upload" enctype="multipart/form-data">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <div class="form-row">
