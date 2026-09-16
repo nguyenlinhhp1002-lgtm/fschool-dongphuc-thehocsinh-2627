@@ -32,8 +32,15 @@ async function getAllMeasurementsMap() {
   return new Map(rs.rows.map((r) => [r.ma_hs, r]));
 }
 
-/** Danh sach ma_hs co it nhat 1 dong dang ky (so_luong_dang_ky > 0), kem tong so mon da dang ky. */
-async function getStudentIdsWithRegistrations({ lop, khoi, q, includeDo } = {}) {
+/**
+ * Danh sach ma_hs co it nhat 1 dong dang ky. Mac dinh chi lay dong con so_luong_dang_ky > 0
+ * (dung cho man hinh cong khai/binh thuong). Truyen includeZero=true de lay ca hoc sinh co
+ * dong da bi sua ve 0 (VD admin lo sua sai qua "Sua SL") - dung cho checkbox "Hiện cả học
+ * sinh có SL = 0" tren trang "Dang ky & phat do", vi cac dong nay van con trong
+ * student_uniform_summary (chi UPDATE ve 0, khong xoa dong) nen admin can tim lai duoc de
+ * sua lai dung so luong.
+ */
+async function getStudentIdsWithRegistrations({ lop, khoi, q, includeDo, includeZero } = {}) {
   const where = [];
   const args = [];
   if (!includeDo) where.push(`s.trang_thai_hoc = 'Đang học'`);
@@ -50,13 +57,14 @@ async function getStudentIdsWithRegistrations({ lop, khoi, q, includeDo } = {}) 
     args.push(`%${q}%`, `%${q}%`);
   }
   const whereSql = where.length ? `AND ${where.join(' AND ')}` : '';
+  const dieuKienSoLuong = includeZero ? '1 = 1' : 'so_luong_dang_ky > 0';
 
   const rs = await db.execute({
     sql: `
       SELECT s.ma_hs, s.ho_ten, s.lop, s.khoi, s.trang_thai_hoc, s.gioi_tinh
       FROM students s
       WHERE s.ma_hs IN (
-        SELECT ma_hs FROM student_uniform_summary WHERE so_luong_dang_ky > 0 GROUP BY ma_hs
+        SELECT ma_hs FROM student_uniform_summary WHERE ${dieuKienSoLuong} GROUP BY ma_hs
       ) ${whereSql}
       ORDER BY s.lop, s.ho_ten
     `,
@@ -114,8 +122,15 @@ async function updateQuantityDangKy({ maHs, codePrefix, soLuongMoi, lyDo, adminU
     sql: 'SELECT so_luong_dang_ky FROM student_uniform_summary WHERE ma_hs = ? AND code_prefix = ?',
     args: [maHs, codePrefix],
   });
-  const soLuongCu = existingRs.rows[0] ? existingRs.rows[0].so_luong_dang_ky : 0;
+  const existing = existingRs.rows[0];
+  const soLuongCu = existing ? existing.so_luong_dang_ky : 0;
   const soLuong = Math.max(0, Math.trunc(Number(soLuongMoi)) || 0);
+
+  if (!existing && soLuong > 0) {
+    // Khong co dong nao (chua tung dang ky muc nay) - khong duoc tu "them moi" 1 dang ky qua
+    // duong sua SL, chi duoc dieu chinh 1 dong DA CO SAN (xem ghi chu dau ham).
+    throw new Error('Học sinh chưa có đăng ký gốc cho mục này — không thể tự thêm số lượng mới ở đây.');
+  }
   if (soLuong === soLuongCu) return false;
 
   await db.execute({
@@ -131,6 +146,26 @@ async function updateQuantityDangKy({ maHs, codePrefix, soLuongMoi, lyDo, adminU
   });
 
   return true;
+}
+
+/**
+ * Hoan tac 1 lan sua SL (dua tren du lieu da ghi trong quantity_change_log) - dua so luong
+ * ve dung gia tri TRUOC lan sua do. Tao 1 dong lich su MOI (khong xoa/sua dong cu) de van
+ * truy vet duoc day du - dung khi admin lo sua sai (VD sua ve 0 nham) can khoi phuc lai nhanh.
+ */
+async function revertQuantityChange(logId, adminUsername) {
+  const rs = await db.execute({ sql: 'SELECT * FROM quantity_change_log WHERE id = ?', args: [logId] });
+  const entry = rs.rows[0];
+  if (!entry) {
+    throw new Error('Không tìm thấy dòng lịch sử này.');
+  }
+  await updateQuantityDangKy({
+    maHs: entry.ma_hs,
+    codePrefix: entry.code_prefix,
+    soLuongMoi: entry.so_luong_cu,
+    lyDo: `Hoàn tác lần sửa lúc ${entry.thoi_gian} (khôi phục về ${entry.so_luong_cu}, trước đó đã sửa thành ${entry.so_luong_moi})`,
+    adminUsername,
+  });
 }
 
 /** Lich su sua SL toan truong (moi nhat truoc), dung cho tab rieng "Lich su sua SL". */
@@ -205,6 +240,7 @@ module.exports = {
   getStudentIdsWithRegistrations,
   upsertSizeAndMaybeQuantity,
   updateQuantityDangKy,
+  revertQuantityChange,
   getQuantityChangeHistory,
   upsertMeasurements,
   countStudentsMissingSize,

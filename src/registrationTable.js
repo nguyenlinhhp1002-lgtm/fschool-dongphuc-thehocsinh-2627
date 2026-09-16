@@ -6,9 +6,9 @@ const summaryRepo = require('./summaryRepo');
  * trang phuc: so luong, size, trang thai phat). Dung chung cho man hinh quan tri va trang
  * cong khai (chi xem).
  */
-async function buildRegistrationRows({ q, lop, khoi } = {}) {
+async function buildRegistrationRows({ q, lop, khoi, includeZero } = {}) {
   const [students, categories, summaryGrouped] = await Promise.all([
-    summaryRepo.getStudentIdsWithRegistrations({ q, lop, khoi }),
+    summaryRepo.getStudentIdsWithRegistrations({ q, lop, khoi, includeZero }),
     categoriesRepo.getActiveCategories(),
     summaryRepo.getAllSummaryGrouped(),
   ]);
@@ -23,6 +23,10 @@ async function buildRegistrationRows({ q, lop, khoi } = {}) {
         codePrefix: cat.code_prefix,
         coSize: cat.co_size,
         soLuong,
+        // co san 1 dong dang ky goc hay khong (du gia tri hien tai co the da bi sua ve 0) -
+        // dung de quyet dinh co cho sua lai SL khi dang la 0 hay khong (chi sua duoc dong DA
+        // CO SAN, khong duoc tu tao moi dang ky qua day - xem summaryRepo.updateQuantityDangKy).
+        coDongGoc: Boolean(row),
         size: row ? row.size : null,
         daPhat,
         trangThaiPhat: soLuong === 0 ? null : daPhat === 0 ? 'chua_phat' : daPhat < soLuong ? 'mot_phan' : 'da_phat_du',

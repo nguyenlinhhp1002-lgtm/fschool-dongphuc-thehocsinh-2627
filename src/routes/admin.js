@@ -605,9 +605,9 @@ router.post(
 router.get(
   '/dang-ky',
   asyncHandler(async (req, res) => {
-    const { q = '', lop = '', khoi = '' } = req.query;
+    const { q = '', lop = '', khoi = '', showZero } = req.query;
     const [{ rows, categories }, lopKhoiList] = await Promise.all([
-      buildRegistrationRows({ q, lop, khoi }),
+      buildRegistrationRows({ q, lop, khoi, includeZero: showZero === '1' }),
       studentsRepo.getDistinctLopKhoi(),
     ]);
 
@@ -618,7 +618,7 @@ router.get(
       rows,
       categories,
       lopKhoiList,
-      filters: { q, lop, khoi },
+      filters: { q, lop, khoi, showZero: showZero === '1' },
       loiSl: req.query.loiSl || null,
     });
   })
@@ -689,7 +689,23 @@ router.get(
       pageTitle: 'Lịch sử sửa SL',
       activeNav: 'quantity-history',
       history,
+      hoanTacLoi: req.query.hoanTacLoi || null,
+      hoanTacOk: req.query.hoanTacOk === '1',
     });
+  })
+);
+
+router.post(
+  '/dang-ky/lich-su-sl/:id/hoan-tac',
+  requireFullAdmin,
+  verifyCsrfToken,
+  asyncHandler(async (req, res) => {
+    try {
+      await summaryRepo.revertQuantityChange(req.params.id, req.session.username);
+    } catch (err) {
+      return res.redirect(`/admin/dang-ky/lich-su-sl?hoanTacLoi=${encodeURIComponent(err.message)}`);
+    }
+    res.redirect('/admin/dang-ky/lich-su-sl?hoanTacOk=1');
   })
 );
 

@@ -5,11 +5,18 @@
   <%- include('../partials/adminNav', { session, activeNav }) %>
   <main class="admin-main">
     <h1>Lịch sử sửa SL</h1>
-    <p class="admin-main__desc">Ghi lại mọi lần admin sửa tay cột "SL" trên trang "Đăng ký &amp; phát đồ" — mỗi lần sửa đều bắt buộc có lý do. Không tính các lần cộng dồn tự động khi nhập file đăng ký.</p>
+    <p class="admin-main__desc">Ghi lại mọi lần admin sửa tay cột "SL" trên trang "Đăng ký &amp; phát đồ" — mỗi lần sửa đều bắt buộc có lý do. Không tính các lần cộng dồn tự động khi nhập file đăng ký. Bấm "Hoàn tác" để đưa SL về lại đúng giá trị trước lần sửa đó (VD lỡ sửa nhầm về 0) — thao tác này cũng được ghi lại thành 1 dòng lịch sử mới, không xoá dòng cũ.</p>
+
+    <% if (typeof hoanTacOk !== 'undefined' && hoanTacOk) { %>
+      <div class="alert alert--success">Đã hoàn tác thành công.</div>
+    <% } %>
+    <% if (typeof hoanTacLoi !== 'undefined' && hoanTacLoi) { %>
+      <div class="alert alert--error"><%= hoanTacLoi %></div>
+    <% } %>
 
     <div class="table-scroll">
       <table class="data-table">
-        <thead><tr><th>Thời gian</th><th>Mã HS</th><th>Họ tên</th><th>Lớp</th><th>Loại</th><th>SL cũ</th><th>SL mới</th><th>Lý do</th><th>Người sửa</th></tr></thead>
+        <thead><tr><th>Thời gian</th><th>Mã HS</th><th>Họ tên</th><th>Lớp</th><th>Loại</th><th>SL cũ</th><th>SL mới</th><th>Lý do</th><th>Người sửa</th><th></th></tr></thead>
         <tbody>
           <% history.rows.forEach(h => { %>
             <tr>
@@ -22,10 +29,19 @@
               <td class="num"><b><%= h.so_luong_moi %></b></td>
               <td><%= h.ly_do %></td>
               <td><%= h.nguoi_sua || '' %></td>
+              <td>
+                <% if (session.role === 'admin') { %>
+                <form method="post" action="/admin/dang-ky/lich-su-sl/<%= h.id %>/hoan-tac" class="js-confirm"
+                      data-confirm-message="Hoàn tác về SL = <%= h.so_luong_cu %> cho mã HS <%= h.ma_hs %> (<%= h.ten_hien_thi || h.code_prefix %>)?">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button class="btn btn-outline btn-sm" type="submit">Hoàn tác</button>
+                </form>
+                <% } %>
+              </td>
             </tr>
           <% }) %>
           <% if (history.rows.length === 0) { %>
-            <tr><td colspan="9" style="text-align:center;color:var(--text-muted)">Chưa có lần sửa SL nào.</td></tr>
+            <tr><td colspan="10" style="text-align:center;color:var(--text-muted)">Chưa có lần sửa SL nào.</td></tr>
           <% } %>
         </tbody>
       </table>

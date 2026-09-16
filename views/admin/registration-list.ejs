@@ -7,6 +7,7 @@
   if (filters.q) qs.set('q', filters.q);
   if (filters.lop) qs.set('lop', filters.lop);
   if (filters.khoi) qs.set('khoi', filters.khoi);
+  if (filters.showZero) qs.set('showZero', '1');
   const returnTo = '/admin/dang-ky' + (qs.toString() ? '?' + qs.toString() : '');
 %>
   <%- include('../partials/adminNav', { session, activeNav }) %>
@@ -33,6 +34,10 @@
           <option value="">Tất cả</option>
           <% [...new Set(lopKhoiList.map(l=>l.khoi))].forEach(k => { %><option value="<%= k %>" <%= filters.khoi === k ? 'selected' : '' %>><%= k %></option><% }) %>
         </select>
+      </div>
+      <div class="form-field form-field--checkbox">
+        <input type="checkbox" id="showZero" name="showZero" value="1" <%= filters.showZero ? 'checked' : '' %> />
+        <label for="showZero" style="margin:0">Hiện cả học sinh có SL = 0 mọi mục</label>
       </div>
       <button class="btn btn-outline" type="submit">Lọc</button>
       <a class="btn btn-primary" href="/admin/ds-no/xuat.xlsx<%= qs.toString() ? '?' + qs.toString() : '' %>">⭳ Tải file DS đăng ký có size</a>
@@ -77,7 +82,23 @@
               <td><%= r.student.lop %></td>
               <% r.cells.forEach(cell => { %>
                 <% if (cell.soLuong === 0) { %>
-                  <td colspan="<%= cell.coSize ? 3 : 2 %>" style="color:var(--border-soft); text-align:center">–</td>
+                  <% if (session.role === 'admin' && cell.coDongGoc) { %>
+                    <td colspan="<%= cell.coSize ? 3 : 2 %>" style="text-align:center">
+                      <form method="post" action="/admin/dang-ky/cap-nhat" class="pill-form js-require-note"
+                            data-note-message="Nhập lý do sửa số lượng đăng ký (bắt buộc):" style="justify-content:center">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                        <input type="hidden" name="maHs" value="<%= r.student.ma_hs %>" />
+                        <input type="hidden" name="codePrefix" value="<%= cell.codePrefix %>" />
+                        <input type="hidden" name="hanhDong" value="set_so_luong" />
+                        <input type="hidden" name="returnTo" value="<%= returnTo %>" />
+                        <input type="hidden" name="lyDo" value="" />
+                        <input type="number" name="giaTri" value="0" min="0" />
+                        <button class="btn-sm" type="submit" title="Nhập lại số lượng (đã bị sửa về 0 trước đó — bắt buộc ghi lý do, có lưu lịch sử)">💾</button>
+                      </form>
+                    </td>
+                  <% } else { %>
+                    <td colspan="<%= cell.coSize ? 3 : 2 %>" style="color:var(--border-soft); text-align:center">–</td>
+                  <% } %>
                 <% } else { %>
                   <td class="num">
                     <% if (session.role === 'admin') { %>
