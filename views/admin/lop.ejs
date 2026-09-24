@@ -12,7 +12,7 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th class="sticky-col" rowspan="2">Họ tên</th>
+            <th class="sticky-col" rowspan="2">Mã HS</th><th rowspan="2">Họ tên</th>
             <% categories.forEach(c => { %><th colspan="<%= c.co_size ? 3 : 2 %>"><%= c.ten_hien_thi %></th><% }) %>
           </tr>
           <tr>
@@ -24,7 +24,8 @@
         <tbody>
           <% dongPhucRows.forEach(r => { %>
             <tr>
-              <td class="sticky-col"><%= r.student.ho_ten %></td>
+              <td class="sticky-col"><%= r.student.ma_hs %></td>
+              <td><%= r.student.ho_ten %></td>
               <% r.cells.forEach(cell => { %>
                 <% if (cell.soLuong === 0) { %>
                   <td colspan="<%= cell.coSize ? 3 : 2 %>" style="color:var(--border-soft); text-align:center">–</td>
@@ -53,13 +54,14 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Họ tên</th><th>Ngày đăng ký</th><th>Đợt đăng ký</th>
+            <th>Mã HS</th><th>Họ tên</th><th>Ngày đăng ký</th><th>Đợt đăng ký</th>
             <th>Thẻ học sinh</th><th>Bộ dây bao thẻ</th><th>Trạng thái</th>
           </tr>
         </thead>
         <tbody>
           <% theRows.forEach(r => { %>
             <tr>
+              <td><%= r.ma_hs %></td>
               <td><%= r.ho_ten || '—' %></td>
               <td><%= r.ngay_dang_ky || '' %></td>
               <td><%= r.dot_dang_ky || '' %></td>
@@ -69,7 +71,7 @@
             </tr>
           <% }) %>
           <% if (theRows.length === 0) { %>
-            <tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Lớp chưa có học sinh nào đăng ký thẻ.</td></tr>
+            <tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Lớp chưa có học sinh nào đăng ký thẻ.</td></tr>
           <% } %>
         </tbody>
       </table>
