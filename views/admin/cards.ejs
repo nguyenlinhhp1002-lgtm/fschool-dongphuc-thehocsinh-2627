@@ -19,6 +19,12 @@
     <% if (uploadErrors) { %>
       <div class="alert alert--error"><b>Không nhập được file:</b><ul><% uploadErrors.forEach(e => { %><li><%= e %></li><% }) %></ul></div>
     <% } %>
+    <% if (typeof daXoa !== 'undefined' && daXoa) { %>
+      <div class="alert alert--success">Đã xoá lần tải lên "<%= tenFileDaXoa %>" (<b><%= soDongXoa %></b> dòng). Có thể tải lại file đúng lên ngay.</div>
+    <% } %>
+    <% if (typeof xoaLoi !== 'undefined' && xoaLoi) { %>
+      <div class="alert alert--error"><%= xoaLoi %></div>
+    <% } %>
 
     <div class="stat-cards">
       <div class="stat-card"><div class="stat-card__label">Học sinh đã đăng ký</div><div class="stat-card__value"><%= stats.tongHocSinh %></div></div>
@@ -93,7 +99,7 @@
         <thead>
           <tr>
             <th>Mã HS</th><th>Họ tên</th><th>Lớp</th><th>Ngày đăng ký</th><th>Đợt đăng ký</th>
-            <th>Thẻ học sinh</th><th>Bộ dây bao thẻ</th><th>Trạng thái</th>
+            <th>Số tiền đóng</th><th>Thẻ học sinh</th><th>Bộ dây bao thẻ</th><th>Trạng thái</th>
           </tr>
         </thead>
         <tbody>
@@ -104,6 +110,7 @@
               <td><%= r.lop || '' %></td>
               <td><%= r.ngay_dang_ky || '' %></td>
               <td><%= r.dot_dang_ky || '' %></td>
+              <td class="num"><%= r.so_tien != null ? Number(r.so_tien).toLocaleString('vi-VN') : '' %></td>
               <td>
                 <% if (session.role === 'admin') { %>
                 <form method="post" action="/admin/the-hoc-sinh/cap-nhat" class="js-inline-form">
@@ -147,7 +154,7 @@
             </tr>
           <% }) %>
           <% if (result.rows.length === 0) { %>
-            <tr><td colspan="8" style="text-align:center;color:var(--text-muted)">Chưa có dữ liệu đăng ký thẻ.</td></tr>
+            <tr><td colspan="9" style="text-align:center;color:var(--text-muted)">Chưa có dữ liệu đăng ký thẻ.</td></tr>
           <% } %>
         </tbody>
       </table>
@@ -155,13 +162,34 @@
     <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px">Tổng <%= result.total %> dòng.</p>
 
     <h2>Lịch sử tải lên</h2>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-6px">Nếu 1 lần tải lên bị nhầm file, bấm "Xoá" để xoá toàn bộ dòng của lần đó — sau đó có thể tải lại file đúng lên ngay (tránh bị coi là trùng dữ liệu cũ). Lần đã xoá vẫn hiển thị lại đây để biết đã từng xoá, kèm ai xoá/lúc nào.</p>
     <div class="table-scroll">
       <table class="data-table">
-        <thead><tr><th>Thời gian</th><th>Người tải</th><th>File</th><th>Tổng dòng</th><th>Không khớp mã HS</th></tr></thead>
+        <thead><tr><th>Thời gian</th><th>Người tải</th><th>File</th><th>Tổng dòng</th><th>Không khớp mã HS</th><th>Trạng thái</th></tr></thead>
         <tbody>
           <% history.forEach(h => { %>
-            <tr><td><%= h.uploaded_at %></td><td><%= h.nguoi_upload %></td><td><%= h.ten_file %></td><td class="num"><%= h.tong_dong %></td><td class="num"><%= h.so_dong_loi %></td></tr>
+            <tr>
+              <td><%= h.uploaded_at %></td>
+              <td><%= h.nguoi_upload %></td>
+              <td><%= h.ten_file %></td>
+              <td class="num"><%= h.tong_dong %></td>
+              <td class="num"><%= h.so_dong_loi %></td>
+              <td>
+                <% if (h.deleted_at) { %>
+                  <span class="badge badge--gray">Đã xoá lúc <%= h.deleted_at %><% if (h.deleted_by) { %> bởi <%= h.deleted_by %><% } %></span>
+                <% } else if (session.role === 'admin') { %>
+                  <form method="post" action="/admin/the-hoc-sinh/upload/<%= h.id %>/xoa" class="js-confirm"
+                        data-confirm-message='Xoá toàn bộ &quot;<%= h.ten_file %>&quot; (<%= h.tong_dong %> dòng)? Không thể hoàn tác.'>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <button class="btn-sm" type="submit" title="Xoá lần tải lên này">🗑 Xoá</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
           <% }) %>
+          <% if (history.length === 0) { %>
+            <tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có lần tải lên nào.</td></tr>
+          <% } %>
         </tbody>
       </table>
     </div>

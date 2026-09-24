@@ -1043,7 +1043,24 @@ router.get(
       ok: req.query.ok === '1',
       moi: req.query.moi || 0,
       trung: req.query.trung || 0,
+      daXoa: req.query.daXoa === '1',
+      soDongXoa: req.query.soDongXoa || 0,
+      tenFileDaXoa: req.query.tenFile || '',
+      xoaLoi: req.query.xoaLoi || null,
     });
+  })
+);
+
+router.post(
+  '/the-hoc-sinh/upload/:id/xoa',
+  requireFullAdmin,
+  verifyCsrfToken,
+  asyncHandler(async (req, res) => {
+    const result = await cardRepo.deleteCardUpload(req.params.id, req.session.username);
+    if (!result.ok) {
+      return res.redirect(`/admin/the-hoc-sinh?xoaLoi=${encodeURIComponent(result.message)}`);
+    }
+    res.redirect(`/admin/the-hoc-sinh?daXoa=1&soDongXoa=${result.soDongXoa}&tenFile=${encodeURIComponent(result.tenFile)}`);
   })
 );
 

@@ -78,6 +78,30 @@ async function getCardUploadHistory() {
   return rs.rows;
 }
 
+/**
+ * Xoa 1 lan tai file dang ky the bi nham (vd sai file) de tai lai dung. Xoa han cac dong
+ * card_registration_items cua lan do (de khong bi bao "trung" khi tai lai dung file), nhung
+ * CHI danh dau xoa (deleted_at/deleted_by) tren card_uploads - khong xoa han dong nay - de
+ * van con hien duoc trong "Lich su tai len" nhu 1 dong da xoa, giu lai lich su xoa.
+ */
+async function deleteCardUpload(uploadId, adminUsername) {
+  const uploadRs = await db.execute({ sql: 'SELECT * FROM card_uploads WHERE id = ?', args: [uploadId] });
+  const upload = uploadRs.rows[0];
+  if (!upload) return { ok: false, message: 'Không tìm thấy lần tải lên này.' };
+  if (upload.deleted_at) return { ok: false, message: 'Lần tải lên này đã được xoá trước đó.' };
+
+  const itemsRs = await db.execute({ sql: 'SELECT COUNT(*) AS c FROM card_registration_items WHERE upload_id = ?', args: [uploadId] });
+  const soDongXoa = Number(itemsRs.rows[0].c);
+
+  await db.execute({ sql: 'DELETE FROM card_registration_items WHERE upload_id = ?', args: [uploadId] });
+  await db.execute({
+    sql: `UPDATE card_uploads SET deleted_at = datetime('now'), deleted_by = ? WHERE id = ?`,
+    args: [adminUsername, uploadId],
+  });
+
+  return { ok: true, soDongXoa, tenFile: upload.ten_file };
+}
+
 /** Danh sach dong dang ky the (moi dong la 1 lan dang ky/cap lai), kem thong tin hoc sinh, co loc. */
 async function searchCardItems({ q = '', lop = '', khoi = '', trangThai = '', page = 1, pageSize = 50 } = {}) {
   const where = [];
@@ -185,6 +209,7 @@ module.exports = {
   resolveCardRows,
   commitCardImport,
   getCardUploadHistory,
+  deleteCardUpload,
   getProgressByGroup,
   searchCardItems,
   updateCardItem,

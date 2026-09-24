@@ -212,14 +212,19 @@ const SCHEMA_SQL = `
     thoi_gian TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
-  -- Lich su upload file dang ky the hoc sinh
+  -- Lich su upload file dang ky the hoc sinh. deleted_at/deleted_by: xoa mem khi 1 lan tai
+  -- len bi nham (vd sai file) - van giu dong nay lai (thay vi xoa han) de con thay duoc lich
+  -- su xoa ngay tren bang "Lich su tai len" hien co, chi xoa han cac dong
+  -- card_registration_items cua lan do de cho phep tai lai dung file khong bi bao trung.
   CREATE TABLE IF NOT EXISTS card_uploads (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nguoi_upload TEXT NOT NULL,
     ten_file TEXT NOT NULL,
     tong_dong INTEGER NOT NULL DEFAULT 0,
     so_dong_loi INTEGER NOT NULL DEFAULT 0,
-    uploaded_at TEXT NOT NULL DEFAULT (datetime('now'))
+    uploaded_at TEXT NOT NULL DEFAULT (datetime('now')),
+    deleted_at TEXT,
+    deleted_by TEXT
   );
 
   -- Tung lan dang ky the/day (cong don qua nhieu dot - hoc sinh co the mat, cap lai nhieu lan)
@@ -256,6 +261,8 @@ const COLUMN_MIGRATIONS = [
   { table: 'students', column: 'gioi_tinh', definition: 'TEXT' },
   { table: 'uniform_categories', column: 'size_group_code', definition: 'TEXT REFERENCES size_groups(code)' },
   { table: 'ds_no_uploads', column: 'so_dong_can_doi_chieu', definition: 'INTEGER NOT NULL DEFAULT 0' },
+  { table: 'card_uploads', column: 'deleted_at', definition: 'TEXT' },
+  { table: 'card_uploads', column: 'deleted_by', definition: 'TEXT' },
 ];
 
 async function addColumnIfMissing(table, column, definition) {
