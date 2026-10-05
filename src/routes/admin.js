@@ -53,6 +53,7 @@ const summaryRepo = require('../summaryRepo');
 const distributionRepo = require('../distributionRepo');
 
 const { buildDsNoWorkbook } = require('../dsNoExport');
+const { buildPhatDoWorkbook } = require('../phatDoExport');
 const dsNoImport = require('../dsNoImport');
 
 const reportsRepo = require('../reportsRepo');
@@ -621,6 +622,23 @@ router.get(
       filters: { q, lop, khoi, showZero: showZero === '1' },
       loiSl: req.query.loiSl || null,
     });
+  })
+);
+
+// Tai xuong DS tong da phat/chua phat theo ma HS x loai trang phuc, cau truc giong bang tren tab
+// "Dang ky & phat do", dung chung bo loc (q/lop/khoi/showZero) voi man hinh.
+router.get(
+  '/dang-ky/xuat.xlsx',
+  asyncHandler(async (req, res) => {
+    const { q = '', lop = '', khoi = '', showZero } = req.query;
+    const { buffer, rowCount } = await buildPhatDoWorkbook({ q, lop, khoi, includeZero: showZero === '1' });
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const filename = `DS dang ky va phat do - xuat ${dd}.${mm}.${today.getFullYear()}${rowCount === 0 ? ' (rong)' : ''}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+    res.send(Buffer.from(buffer));
   })
 );
 
