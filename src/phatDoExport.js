@@ -79,8 +79,74 @@ async function buildPhatDoWorkbook(filter = {}) {
   sheet.getColumn(3).width = 8;
   sheet.views = [{ state: 'frozen', xSplit: 3, ySplit: 2 }];
 
+  themSheetTongHop(workbook, rows, categories);
+
   const buffer = await workbook.xlsx.writeBuffer();
   return { buffer, rowCount: rows.length };
 }
 
-module.exports = { buildPhatDoWorkbook };
+const KHONG_CO_SIZE = '(chưa có size)';
+const KHONG_THEO_DOI_SIZE = '(không theo dõi size)';
+
+/** Thu tu size: chu so/nho truoc, "(chua co size)" cuoi; so sanh tu nhien (S < M < L ... theo bang chu cai neu khong phai so). */
+const THU_TU_SIZE_CHU = ['XXS', 'XS', 'S', 'M', 'L', 'XL', '2XL', 'XXL', '3XL', 'XXXL', '4XL', '5XL'];
+
+function soSanhSize(a, b) {
+  if (a === KHONG_CO_SIZE) return b === KHONG_CO_SIZE ? 0 : 1;
+  if (b === KHONG_CO_SIZE) return -1;
+  const ia = THU_TU_SIZE_CHU.indexOf(a.toUpperCase());
+  const ib = THU_TU_SIZE_CHU.indexOf(b.toUpperCase());
+  if (ia >= 0 && ib >= 0) return ia - ib;
+  if (ia >= 0) return -1; // size chu (S/M/L...) truoc size so/khac
+  if (ib >= 0) return 1;
+  return a.localeCompare(b, 'vi', { numeric: true });
+}
+
+/**
+ * Sheet 2 "Tong hop theo size": voi moi loai trang phuc, tung size la 1 dong gom Tong SL / Da phat /
+ * Chua phat, cuoi moi loai co dong "Tong". Tinh tu CHINH danh sach dang loc o sheet 1 nen so lieu
+ * luon khop voi bang chi tiet (cung bo loc Ma HS/ten, Lop, Khoi).
+ */
+function themSheetTongHop(workbook, rows, categories) {
+  const sheet = workbook.addWorksheet('Tong hop theo size');
+  sheet.addRow(['Loại trang phục', 'Size', 'Tổng SL', 'Đã phát', 'Chưa phát']);
+  sheet.getRow(1).font = { bold: true };
+  sheet.getRow(1).alignment = { horizontal: 'center' };
+
+  let tongTatCa = { sl: 0, daPhat: 0 };
+  categories.forEach((cat, idx) => {
+    const theoSize = new Map();
+    rows.forEach((r) => {
+      const cell = r.cells[idx];
+      if (cell.soLuong === 0) return;
+      const size = cat.co_size ? (cell.size && String(cell.size).trim() ? String(cell.size).trim() : KHONG_CO_SIZE) : KHONG_THEO_DOI_SIZE;
+      const acc = theoSize.get(size) || { sl: 0, daPhat: 0 };
+      acc.sl += cell.soLuong;
+      acc.daPhat += Math.min(cell.daPhat, cell.soLuong);
+      theoSize.set(size, acc);
+    });
+    if (theoSize.size === 0) return;
+
+    let tongLoai = { sl: 0, daPhat: 0 };
+    [...theoSize.keys()].sort(soSanhSize).forEach((size) => {
+      const { sl, daPhat } = theoSize.get(size);
+      sheet.addRow([cat.ten_hien_thi, size, sl, daPhat, sl - daPhat]);
+      tongLoai = { sl: tongLoai.sl + sl, daPhat: tongLoai.daPhat + daPhat };
+    });
+    const dongTong = sheet.addRow([`Tổng ${cat.ten_hien_thi}`, '', tongLoai.sl, tongLoai.daPhat, tongLoai.sl - tongLoai.daPhat]);
+    dongTong.font = { bold: true };
+    tongTatCa = { sl: tongTatCa.sl + tongLoai.sl, daPhat: tongTatCa.daPhat + tongLoai.daPhat };
+  });
+
+  const dongCuoi = sheet.addRow(['TỔNG CỘNG', '', tongTatCa.sl, tongTatCa.daPhat, tongTatCa.sl - tongTatCa.daPhat]);
+  dongCuoi.font = { bold: true };
+
+  sheet.getColumn(1).width = 30;
+  sheet.getColumn(2).width = 22;
+  [3, 4, 5].forEach((c) => {
+    sheet.getColumn(c).width = 12;
+  });
+  sheet.views = [{ state: 'frozen', ySplit: 1 }];
+}
+
+module.exports = { buildPhatDoWorkbook, themSheetTongHop };
