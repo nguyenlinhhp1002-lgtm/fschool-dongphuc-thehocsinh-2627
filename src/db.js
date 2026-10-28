@@ -103,7 +103,7 @@ const SCHEMA_SQL = `
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     upload_id INTEGER NOT NULL REFERENCES registration_uploads(id),
     batch_id INTEGER REFERENCES registration_batches(id),
-    ma_hs TEXT REFERENCES students(ma_hs),
+    ma_hs TEXT, -- KHONG dung FOREIGN KEY: dong ma HS khong khop danh sach van phai luu duoc (Turso enforce FK)
     ten_raw TEXT,
     mon_raw TEXT NOT NULL,
     size_raw TEXT,
@@ -231,7 +231,7 @@ const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS card_registration_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     upload_id INTEGER REFERENCES card_uploads(id),
-    ma_hs TEXT REFERENCES students(ma_hs),
+    ma_hs TEXT, -- KHONG dung FOREIGN KEY: dong ma HS khong khop danh sach van phai luu duoc (Turso enforce FK)
     co_the INTEGER NOT NULL DEFAULT 1,
     co_day INTEGER NOT NULL DEFAULT 0,
     so_tien REAL,
@@ -307,6 +307,40 @@ async function migrateAdminsRoleCheckIfNeeded() {
     ],
     'write'
   );
+}
+
+/**
+ * Bo rang buoc FOREIGN KEY ma_hs -> students tren registration_items / card_registration_items
+ * cho DB da co san. Thiet ke cho phep luu ca dong co ma HS KHONG khop danh sach toan truong
+ * (de admin doi chieu), nhung Turso BAT enforce FK nen INSERT cac dong do bi loi "FOREIGN KEY
+ * constraint failed" (local SQLite khong enforce nen khong lo ra khi test). SQLite khong
+ * cho DROP CONSTRAINT -> tao lai bang (chi chay khi dinh nghia hien tai con FK).
+ */
+async function migrateDropMaHsForeignKeys() {
+  const targets = [
+    { table: 'registration_items', indexes: ['idx_reg_items_ma_hs', 'idx_reg_items_batch', 'idx_reg_items_code'] },
+    { table: 'card_registration_items', indexes: ['idx_card_items_ma_hs'] },
+  ];
+  for (const { table, indexes } of targets) {
+    const rs = await db.execute({ sql: "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?", args: [table] });
+    const currentSql = rs.rows[0] ? rs.rows[0].sql : '';
+    if (!currentSql || !/ma_hs TEXT REFERENCES students\(ma_hs\)/.test(currentSql)) continue;
+
+    const newSql = currentSql
+      .replace(/ma_hs TEXT REFERENCES students\(ma_hs\)/, 'ma_hs TEXT')
+      .replace(/CREATE TABLE\s+"?[A-Za-z_]+"?/, `CREATE TABLE ${table}_new`);
+    await db.batch(
+      [
+        { sql: newSql, args: [] },
+        { sql: `INSERT INTO ${table}_new SELECT * FROM ${table}`, args: [] },
+        { sql: `DROP TABLE ${table}`, args: [] },
+        { sql: `ALTER TABLE ${table}_new RENAME TO ${table}`, args: [] },
+      ],
+      'write'
+    );
+    const idxRs = SCHEMA_SQL.split(';').map((x) => x.trim()).filter((x) => indexes.some((i) => x.includes(i)));
+    for (const stmt of idxRs) await db.execute(stmt);
+  }
 }
 
 async function migrateColumns() {
@@ -393,6 +427,7 @@ function ensureSchema() {
     schemaReadyPromise = db
       .executeMultiple(SCHEMA_SQL)
       .then(migrateAdminsRoleCheckIfNeeded)
+      .then(migrateDropMaHsForeignKeys)
       .then(migrateColumns)
       .then(seedSizeGroupsIfEmpty)
       .then(seedCategoriesIfEmpty);
